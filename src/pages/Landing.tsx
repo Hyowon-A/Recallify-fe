@@ -1,8 +1,9 @@
+import Layout from "./_Layout";
 type Props = { onGetStarted: () => void };
 
 export default function Landing({ onGetStarted }: Props) {
   return (
-    <>
+    <><Layout>
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 py-20 md:grid-cols-2">
         <div className="text-center md:text-left">
@@ -94,6 +95,7 @@ export default function Landing({ onGetStarted }: Props) {
           <span>Study smarter.</span>
         </div>
       </footer>
+      </Layout>
     </>
   );
 }
