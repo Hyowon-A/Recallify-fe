@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ProfileModal from "../components/ProfileModal";
-import AuthModal from "../components/AuthModal"; // <- your Tailwind modal from earlier
+import AuthModal from "../components/AuthModal";
 
 type User = { name: string; email: string } | null;
 
@@ -14,6 +14,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // auth modal
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [authOpen, setAuthOpen] = useState(false);
+
+  const handleAuthSuccess = (user: { name: string; email: string }) => {
+    setUser(user);
+    setAuthOpen(false);
+  };  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,7 +73,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <AuthModal
           mode={authMode}
           onClose={() => setAuthOpen(false)}
-          onSwitch={(m) => setAuthMode(m)}
+          onSwitch={(m) => setAuthMode(m)} 
+          onSuccess={handleAuthSuccess}        
         />
       )}
 

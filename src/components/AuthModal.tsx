@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 type Mode = "login" | "signup";
 
@@ -6,14 +7,17 @@ export default function AuthModal({
   mode,
   onClose,
   onSwitch,
+  onSuccess
 }: {
   mode: Mode;
   onClose: () => void;
   onSwitch: (m: Mode) => void;
+  onSuccess: (user: { email: string, name: string}) => void;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const navigate = useNavigate();
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
@@ -40,10 +44,43 @@ export default function AuthModal({
 
         <form
           className="space-y-3"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            // TODO: call your Spring Boot auth endpoints
-            // Example: api.post('/auth/login', { email, password: pw })
+            const endpoint = mode === "login" ? "/api/user/login" : "/api/user/register";
+
+            const payload = mode === "login"
+              ? { email, password: pw }
+              : { name, email, password: pw };     
+            console.log(payload);
+            try {
+              const res = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+                credentials: "include", // required if you're using cookies for session auth
+              });
+
+              if (!res.ok) {
+                const errorData = await res.json();
+                alert("Auth failed: " + errorData.message);
+                return;
+              }
+
+              const data = await res.json();
+              console.log("Auth success:", data);
+
+              localStorage.setItem("token", data.token); // Save JWT securely
+              onSuccess({ email: data.email, name: data.name });
+
+              navigate("/dashboard");
+
+
+            } catch (err) {
+              console.error("Request failed", err);
+              alert("Something went wrong!");
+            }
           }}
         >
           {mode === "signup" && (

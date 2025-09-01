@@ -4,6 +4,8 @@ import Landing from "./pages/Landing";
 import AuthModal from "./components/AuthModal";
 import Dashboard from "./pages/Dashboard";
 import PublicLibrary from "./pages/PublicLibrary";
+import LearnMCQ from "./pages/LearnMCQ";
+import _Layout from "./pages/_Layout"
 
 export default function App() {
   const [auth, setAuth] = useState<null | "login" | "signup">(null);
@@ -16,6 +18,7 @@ export default function App() {
         <Route path="/" element={<Landing onGetStarted={() => setAuth("signup")} />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/library" element={<PublicLibrary />} />
+        <Route path="/learn/:deckId" element={<LearnMCQ />} />
       </Routes>
 
       {/* Auth Modal */}
@@ -23,7 +26,9 @@ export default function App() {
         <AuthModal
           mode={auth}
           onClose={() => setAuth(null)}
-          onSwitch={(m) => setAuth(m)}
+          onSwitch={(m) => setAuth(m)} onSuccess={function (user: { email: string; }): void {
+            throw new Error("Function not implemented.");
+          } }
         />
       )}
     </div>
