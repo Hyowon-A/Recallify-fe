@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ProfileModal({
   open,
@@ -15,6 +15,12 @@ export default function ProfileModal({
 }) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
+
+  useEffect(() => {
+    setName(user.name);
+    setEmail(user.email);
+  }, [user]);
+  
   if (!open) return null;
 
   return (

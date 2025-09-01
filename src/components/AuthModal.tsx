@@ -71,7 +71,10 @@ export default function AuthModal({
               const data = await res.json();
               console.log("Auth success:", data);
 
-              localStorage.setItem("token", data.token); // Save JWT securely
+              localStorage.setItem("token", data.token);
+              localStorage.setItem("email", data.email);
+              localStorage.setItem("name", data.name);
+
               onSuccess({ email: data.email, name: data.name });
 
               navigate("/dashboard");

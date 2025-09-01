@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import PublicLibrary from "./pages/PublicLibrary";
 import LearnMCQ from "./pages/LearnMCQ";
 import _Layout from "./pages/_Layout"
+import CreateMCQs from "./pages/createMCQs";
 
 export default function App() {
   const [auth, setAuth] = useState<null | "login" | "signup">(null);
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/library" element={<PublicLibrary />} />
         <Route path="/learn/:deckId" element={<LearnMCQ />} />
+        <Route path="/MCQ" element={<CreateMCQs />} />
       </Routes>
 
       {/* Auth Modal */}

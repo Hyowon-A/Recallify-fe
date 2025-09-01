@@ -20,7 +20,7 @@ export default function Dashboard() {
   const nav = useNavigate();
 
   const handleAddMCQ = () => {
-    // TODO: open create-modal or navigate to builder
+    nav("/MCQ")
     alert("Add MCQ set");
   };
   const handleAddFlash = () => {

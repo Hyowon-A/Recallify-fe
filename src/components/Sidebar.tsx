@@ -2,13 +2,14 @@ import { NavLink } from "react-router-dom";
 
 export default function Sidebar() {
   const linkBase =
-    "w-full text-left rounded-xl px-4 py-2 font-medium transition";
+    "w-full text-center rounded-xl px-4 py-2 font-medium transition"; // changed to text-center
+
   return (
-    <aside className="w-60 shrink-0 border-r bg-gray-100">
-      <div className="px-6 py-6">
-        <div className="text-2xl font-extrabold text-emerald-600">Recallify</div>
-      </div>
-      <nav className="px-4 space-y-2">
+    <aside className="w-60 border-r bg-gray-100 flex flex-col items-center">
+      <div className="h-10" />
+
+      {/* Navigation */}
+      <nav className="w-full px-4 space-y-2">
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
@@ -17,6 +18,9 @@ export default function Sidebar() {
         >
           Dashboard
         </NavLink>
+      </nav>
+      <div className="h-6" />
+      <nav className="w-full px-4 space-y-2">
         <NavLink
           to="/library"
           className={({ isActive }) =>
