@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Layout from "./_Layout";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 

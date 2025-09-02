@@ -86,7 +86,7 @@ export default function Dashboard() {
         {mcq === null ? (
           <SkeletonGrid />
         ) : mcq.length === 0 ? (
-          <EmptyState message="No MCQ sets yet. Click Add to create one." />
+          <EmptyState message="No public MCQ sets yet. Click Add to create one." />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {mcq.map((d) => (
@@ -102,7 +102,7 @@ export default function Dashboard() {
         {flash === null ? (
           <SkeletonGrid />
         ) : flash.length === 0 ? (
-          <EmptyState message="No flashcard sets yet. Click Add to create one." />
+          <EmptyState message="No public flashcard sets yet. Click Add to create one." />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {flash.map((d) => (
