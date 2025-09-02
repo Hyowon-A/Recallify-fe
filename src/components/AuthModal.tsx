@@ -17,7 +17,6 @@ export default function AuthModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
-  const navigate = useNavigate();
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
@@ -76,9 +75,6 @@ export default function AuthModal({
               localStorage.setItem("name", data.name);
 
               onSuccess({ email: data.email, name: data.name });
-
-              navigate("/dashboard");
-
 
             } catch (err) {
               console.error("Request failed", err);

@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 export type Deck = { id: string; title: string; count: number };
 
 export default function DeckCard({
