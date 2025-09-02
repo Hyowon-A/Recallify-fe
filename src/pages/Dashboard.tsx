@@ -66,10 +66,10 @@ export default function Dashboard() {
     return () => ctl.abort();
   }, []);
 
-  const handleAddMCQ = () => nav("/MCQ");            // your existing route
+  const handleAddMCQ = () => nav("/MCQ");
   const handleAddFlash = () => nav("/flashcards/new");
-  const handleLearn = (id: string) => nav(`/learn/${id}`);
-  const handleEdit = (id: string) => nav(`/decks/${id}/edit`);
+
+  const openDetails = (d: Deck) => nav(`/decks/${d.id}`, { state: { id: d.id, title: d.title, count: d.count } });
 
   return (
     <>
@@ -89,7 +89,7 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {mcq.map((d) => (
-              <DeckCard key={d.id} deck={d} onLearn={handleLearn} onEdit={handleEdit} />
+              <DeckCard key={d.id} deck={d} />
             ))}
           </div>
         )}
@@ -105,7 +105,7 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {flash.map((d) => (
-              <DeckCard key={d.id} deck={d} onLearn={handleLearn} onEdit={handleEdit} />
+              <DeckCard key={d.id} deck={d} onOpen={() => openDetails(d)} />
             ))}
           </div>
         )}

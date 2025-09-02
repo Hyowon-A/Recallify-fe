@@ -9,6 +9,7 @@ import LearnMCQ from "./pages/LearnMCQ";
 import _Layout from "./pages/_Layout"
 import CreateMCQs from "./pages/CreateMCQs";
 import Layout from "./pages/_Layout";
+import DeckDetails from "./pages/DeckDetails";
 
 type User = { name: string; email: string } | null;
 
@@ -94,6 +95,14 @@ export default function App() {
             element={
               <ProtectedRoute user={user}>
                 <LearnMCQ />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/decks/:setId"
+            element={
+              <ProtectedRoute user={user}>
+                <DeckDetails />
               </ProtectedRoute>
             }
           />
