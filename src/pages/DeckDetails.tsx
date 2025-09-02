@@ -1,6 +1,7 @@
-// src/pages/DeckDetails.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Trash2 } from "lucide-react";
+import DeckDeleteModal from "../components/DeckDeleteModal";
 
 type DeckMeta = { id: string; title: string; count: number; isPublic?: boolean };
 type ApiDeckMeta = { id: string | number; title: string; count?: number; isPublic?: boolean };
@@ -39,6 +40,27 @@ export default function DeckDetails() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!setId) return;
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      await fetch(`/api/mcqSet/delete/${setId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // navigate back to dashboard after delete
+      nav("/dashboard");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Fetch meta ONLY if we didn't get it from Dashboard (hybrid)
   useEffect(() => {
@@ -97,6 +119,7 @@ export default function DeckDetails() {
 
   const startQuiz = () => nav(`/learn/${setId}`);
   const editDeck = () => nav(`/decks/${setId}/edit`);
+  const deleteDeck = () => setDeleteOpen(true);
 
   // Loading state: if we have meta from state, show it immediately and skeleton questions
   if (loading && !questions) {
@@ -126,8 +149,16 @@ export default function DeckDetails() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-6">
-      <MetaHeader meta={meta} onStart={startQuiz} onEdit={editDeck} />
+      <MetaHeader meta={meta} onStart={startQuiz} onEdit={editDeck} onDelete={deleteDeck}/>
       <QuestionsPreview questions={questions} />
+
+      <DeckDeleteModal
+            open={deleteOpen}
+            itemName={meta?.title}
+            loading={deleting}
+            onDelete={handleDelete}
+            onClose={() => setDeleteOpen(false)}
+        />
     </div>
   );
 }
@@ -136,10 +167,12 @@ function MetaHeader({
   meta,
   onStart,
   onEdit,
+  onDelete
 }: {
   meta: DeckMeta;
   onStart?: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
@@ -161,6 +194,11 @@ function MetaHeader({
           <button onClick={onEdit} className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
             Edit
           </button>
+        )}
+        {onDelete && (
+            <button onClick={onDelete} className="rounded-lg border p-2 text-red-500 hover:bg-red-50">
+                <Trash2 className="w-4 h-4" />
+            </button>
         )}
         {onStart && (
           <button
