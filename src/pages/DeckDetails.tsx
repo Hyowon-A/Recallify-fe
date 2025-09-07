@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import DeckDeleteModal from "../components/DeckDeleteModal";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from "recharts";
 
 type DeckMeta = { id: string; title: string; count: number; isPublic?: boolean };
 type ApiDeckMeta = { id: string | number; title: string; count?: number; isPublic?: boolean };
@@ -43,6 +46,10 @@ export default function DeckDetails() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  const token = localStorage.getItem("token") ?? "";
+  const [scores, setScores] = useState<{ score: number; takenAt: string }[] >([]);
+
 
   const handleDelete = async () => {
     if (!setId) return;
@@ -65,7 +72,6 @@ export default function DeckDetails() {
   // Fetch meta ONLY if we didn't get it from Dashboard (hybrid)
   useEffect(() => {
     if (!setId) return;
-    const token = localStorage.getItem("token") ?? "";
     const ctl = new AbortController();
 
     async function loadMetaIfNeeded() {
@@ -91,7 +97,6 @@ export default function DeckDetails() {
   // Always fetch questions
   useEffect(() => {
     if (!setId) return;
-    const token = localStorage.getItem("token") ?? "";
     const ctl = new AbortController();
 
     async function loadQuestions() {
@@ -117,15 +122,37 @@ export default function DeckDetails() {
     return () => ctl.abort();
   }, [setId]);
 
-  const startQuiz = () => nav(`/learn/${setId}`);
-  const editDeck = () => nav(`/decks/${setId}/edit`);
+  useEffect(() => {
+    async function fetchScores() {
+      const res = await fetch(`/api/mcqScore/get/${setId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      setScores(data); // [{ score: 7, total: 10, takenAt: "2025-09-05T..." }]
+    }
+  
+    fetchScores();
+  }, [setId]);
+  
+
+  const startQuiz = () => {
+    nav(`/learn/${setId}`, { state: { questions, deckTitle: meta?.title } });
+  };  
+  const editDeck = () => nav(`/sets/${setId}/edit`, {
+    state: {
+      meta,
+      questions
+    }
+  });  
   const deleteDeck = () => setDeleteOpen(true);
 
   // Loading state: if we have meta from state, show it immediately and skeleton questions
   if (loading && !questions) {
     return (
       <div className="mx-auto max-w-[1100px] px-4 py-6">
-        <MetaHeader meta={meta ?? { id: setId ?? "", title: "Loading…", count: 0 }} />
+        <MetaHeader meta={meta ?? { id: setId ?? "", title: "Loading…", count: 0 }}/>
         <QuestionsSkeleton />
       </div>
     );
@@ -150,6 +177,40 @@ export default function DeckDetails() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-6">
       <MetaHeader meta={meta} onStart={startQuiz} onEdit={editDeck} onDelete={deleteDeck}/>
+      <div className="rounded-xl bg-white p-6 shadow">
+        <h2 className="font-semibold text-lg mb-4">Score Progress (Last 5 Attempts)</h2>
+
+        {scores.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={scores.slice(-5).map((s) => ({
+                date: new Date(s.takenAt).toLocaleDateString("en-GB", {
+                  month: "short",
+                  day: "numeric",
+                }),
+                score: s.score,
+              }))}
+              margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#10B981"
+                strokeWidth={3}
+                activeDot={{ r: 8 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-sm text-gray-500">No attempts yet. Try this quiz to see progress here.</div>
+        )}
+      </div>
+
+
       <QuestionsPreview questions={questions} />
 
       <DeckDeleteModal
@@ -215,7 +276,7 @@ function MetaHeader({
 
 function QuestionsPreview({ questions }: { questions: Question[] }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-5">
       {questions.map((q, idx) => (
         <div key={q.id} className="rounded-xl border bg-white p-5">
           <div className="mb-3 font-medium">

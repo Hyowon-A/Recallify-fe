@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import FinalResultModal from "../components/FinalResultModal";
 
 type Option = { id: string; option: string; correct?: boolean; explanation?: string};
 type Question = { id: string; question: string; options: Option[]; explanation?: string};
@@ -14,7 +15,7 @@ function mapQuestion(q: ApiMcq, qIdx: number): Question {
     id: String(q.id ?? qIdx),
     question: q.question ?? "",
     explanation: q.explanation ?? "",
-    options: (q.options ?? []).map((o, i) => ({
+    options: (q.options ?? []).map((o) => ({
       id: o.id ?? "",
       option: o.option ?? "",
       correct: Boolean(o.correct),
@@ -24,11 +25,17 @@ function mapQuestion(q: ApiMcq, qIdx: number): Question {
 }
 
 export default function LearnMCQ() {
-  const { deckId } = useParams<{ deckId: string }>();
+
+  const { setId } = useParams<{ setId: string }>();
   const nav = useNavigate();
 
-  const [deckTitle, setDeckTitle] = useState<string>("");
-  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const token = localStorage.getItem("token") || "";
+
+  const location = useLocation();
+  const state = location.state as { questions: Question[]; deckTitle: string } | undefined;
+  const [questions, setQuestions] = useState<Question[] | null>(state?.questions ?? null);
+  const [deckTitle, setDeckTitle] = useState<string>(state?.deckTitle ?? "");
+
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -38,10 +45,14 @@ export default function LearnMCQ() {
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState(0);
 
-  useEffect(() => {
-    if (!deckId) return;
+  const [showResults, setShowResults] = useState(false);
 
-    const token = localStorage.getItem("token") || "";
+  useEffect(() => {
+    if (questions || !setId) {
+      setLoading(false);
+      return;
+    }
+
     const ctl = new AbortController();
 
     async function run() {
@@ -54,7 +65,7 @@ export default function LearnMCQ() {
       setScore(0);
 
       try {
-        const res = await fetch(`/api/mcq/get/${deckId}`, {
+        const res = await fetch(`/api/mcq/get/${setId}`, {
           headers: { Authorization: `Bearer ${token}` },
             signal: ctl.signal,
         })
@@ -83,7 +94,7 @@ export default function LearnMCQ() {
 
     run();
     return () => ctl.abort();
-  }, [deckId, nav]);
+  }, [setId, nav]);
 
   // --- Derived data
   const q = questions?.[index];
@@ -118,14 +129,29 @@ export default function LearnMCQ() {
     setRevealed(true);
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (!questions) return;
     if (index + 1 >= questions.length) {
-      alert(`Done! Score: ${score}/${questions.length}`);
-      setIndex(0);
-      setSelected(null);
-      setRevealed(false);
-      setScore(0);
+      setShowResults(true);
+      try {
+        const res = await fetch("/api/mcqScore/store", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            mcqSetId: setId,
+            score: score,
+          }),
+        });
+  
+        if (!res.ok) {
+          console.error("Failed to store score:", await res.text());
+        }
+      } catch (err) {
+        console.error("Error storing score:", err);
+      }
       return;
     }
     setIndex((i) => i + 1);
@@ -150,7 +176,7 @@ export default function LearnMCQ() {
   if (loading) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 py-6">
-        <Header deckTitle="Loading…" total={0} index={0} progressPct={0} />
+        <Header deckTitle="Loading…" setId={setId || ""} total={0} index={0} progressPct={0} />
         <div className="rounded-2xl border bg-gray-100 p-6 md:p-8">
           <div className="mb-4 h-6 w-2/3 animate-pulse rounded bg-gray-200" />
           <SkeletonOptions />
@@ -162,7 +188,7 @@ export default function LearnMCQ() {
   if (err) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 py-6">
-        <Header deckTitle="Error" total={0} index={0} progressPct={0} />
+        <Header deckTitle="Error" setId={setId || ""} total={0} index={0} progressPct={0} />
         <div className="rounded-2xl border bg-red-50 p-6 text-red-700">
           {err}
         </div>
@@ -173,7 +199,7 @@ export default function LearnMCQ() {
   if (!questions || questions.length === 0 || !q) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 py-6">
-        <Header deckTitle={deckTitle || "MCQ Deck"} total={0} index={0} progressPct={0} />
+        <Header deckTitle={deckTitle || "MCQ Deck"} setId={setId || ""} total={0} index={0} progressPct={0} />
         <div className="rounded-2xl border bg-white p-6 text-gray-600">
           No questions found for this deck.
         </div>
@@ -185,9 +211,23 @@ export default function LearnMCQ() {
     <div className="mx-auto max-w-[1200px] px-4 py-6">
       <Header
         deckTitle={deckTitle || "MCQ Deck"}
+        setId={setId || ""}
         total={questions.length}
         index={index}
         progressPct={progressPct}
+      />
+
+      <FinalResultModal
+        correct={score}
+        total={questions.length}
+        open={showResults}
+        onRestart={() => {
+          setShowResults(false);
+          setScore(0);
+          setIndex(0);
+          setSelected(null);
+          setRevealed(false);
+        }}
       />
 
       <div className="rounded-2xl border bg-gray-100 p-6 md:p-8">
@@ -268,11 +308,13 @@ export default function LearnMCQ() {
 
 function Header({
   deckTitle,
+  setId,
   total,
   index,
   progressPct,
 }: {
   deckTitle: string;
+  setId: string;
   total: number;
   index: number;
   progressPct: number;
@@ -281,7 +323,7 @@ function Header({
     <>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="text-sm text-emerald-700 hover:underline">
+          <Link to={`/sets/${setId}`} className="text-sm text-emerald-700 hover:underline">
             ← Back
           </Link>
           <div>
@@ -290,9 +332,6 @@ function Header({
               {total > 0 ? `${total} questions` : "—"}
             </p>
           </div>
-        </div>
-        <div className="grid h-10 w-10 place-items-center rounded-full border bg-white text-emerald-600 font-bold">
-          H
         </div>
       </div>
 
@@ -304,7 +343,7 @@ function Header({
           />
         </div>
         <div className="w-24 text-right text-sm text-gray-600">
-          {total > 0 ? `${index + 1} / ${total}` : ""}
+          {total > 0 ? `${index} / ${total}` : ""}
         </div>
       </div>
     </>

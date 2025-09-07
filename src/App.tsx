@@ -10,6 +10,8 @@ import _Layout from "./pages/_Layout"
 import CreateMCQs from "./pages/CreateMCQs";
 import Layout from "./pages/_Layout";
 import DeckDetails from "./pages/DeckDetails";
+import EditMCQSet from "./pages/EditMCQSet";
+import { isTokenExpired } from "./jwt";
 
 type User = { name: string; email: string } | null;
 
@@ -33,7 +35,15 @@ export default function App() {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
     const name  = localStorage.getItem("name");
-    if (token && email && name) setUser({ name, email });
+    
+    if (token && email && name && !isTokenExpired(token)) {
+      setUser({ name, email });
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("email");
+      localStorage.removeItem("name");
+      setUser(null);
+    }
   }, []);
 
   // helpers to open modals from Layout
@@ -91,7 +101,7 @@ export default function App() {
             }
           />
           <Route
-            path="/learn/:deckId"
+            path="/learn/:setId"
             element={
               <ProtectedRoute user={user}>
                 <LearnMCQ />
@@ -99,10 +109,18 @@ export default function App() {
             }
           />
           <Route
-            path="/decks/:setId"
+            path="/sets/:setId"
             element={
               <ProtectedRoute user={user}>
                 <DeckDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sets/:setId/edit"
+            element={
+              <ProtectedRoute user={user}>
+                <EditMCQSet  />
               </ProtectedRoute>
             }
           />
@@ -125,8 +143,8 @@ export default function App() {
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
         user={user ?? { name: "", email: "" }}
-        onSave={(u) => setUser(u)}
         onLogout={handleLogout}
+        setUser={setUser}
       />
     </>
   );

@@ -14,6 +14,7 @@ export default function CreateMCQs() {
   const [count, setCount] = useState(10);
 
   const [loading, setLoading] = useState(false);
+  const [isPublic, setIsPublic] = useState(false)
 
   const token = localStorage.getItem("token") ?? "";
 
@@ -44,7 +45,11 @@ export default function CreateMCQs() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
         },
-        body: deckTitle,
+        body: JSON.stringify({
+          title: deckTitle,
+          isPublic: isPublic,
+          count: count,
+        }),        
     });
 
     if (!createRes.ok) {
@@ -97,7 +102,7 @@ export default function CreateMCQs() {
             onChange={e => setDeckType(e.target.value as any)}
           >
             <option value="MCQ">MCQ</option>
-            <option value="FLASHCARD">Flashcards</option>
+            {/* <option value="FLASHCARD">Flashcards</option> */}
           </select>
         </div>
       </div>
@@ -108,10 +113,10 @@ export default function CreateMCQs() {
           className={`px-4 py-1.5 rounded-full text-sm font-semibold ${activeTab==="upload"?"bg-white shadow":"text-gray-600"}`}
           onClick={()=>setActiveTab("upload")}
         >Upload</button>
-        <button
+        {/* <button
           className={`px-4 py-1.5 rounded-full text-sm font-semibold ${activeTab==="paste"?"bg-white shadow":"text-gray-600"}`}
           onClick={()=>setActiveTab("paste")}
-        >Paste text</button>
+        >Paste text</button> */}
       </div>
 
       {activeTab === "upload" ? (
@@ -120,11 +125,11 @@ export default function CreateMCQs() {
           onDrop={onDrop}
           className="mb-6 rounded-2xl border-2 border-dashed border-gray-300 bg-white p-8 text-center"
         >
-          <p className="font-medium">Drag & drop a PDF/TXT/DOCX</p>
+          <p className="font-medium">Drag & drop a PDF</p>
           <p className="text-sm text-gray-500">or</p>
           <label className="mt-3 inline-block cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700">
             Choose file
-            <input type="file" accept=".pdf,.txt,.docx" className="hidden" onChange={onSelectFile} />
+            <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={onSelectFile} />
           </label>
           {file && <p className="mt-3 text-sm text-gray-600">Selected: {file.name}</p>}
         </div>
@@ -160,6 +165,26 @@ export default function CreateMCQs() {
 
             <span className="text-sm text-gray-500">/ 40</span>
         </div>
+
+        <div className="inline-flex rounded-full bg-gray-100 p-1">
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              isPublic ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setIsPublic(true)}
+          >
+            Public
+          </button>
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              !isPublic ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setIsPublic(false)}
+          >
+            Private
+          </button>
+        </div>
+
 
         <button
             onClick={handleGenerate}

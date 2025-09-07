@@ -4,24 +4,163 @@ export default function ProfileModal({
   open,
   onClose,
   user,
-  onSave,
   onLogout,
+  setUser,
 }: {
   open: boolean;
   onClose: () => void;
   user: { name: string; email: string };
-  onSave: (u: { name: string; email: string }) => void;
   onLogout: () => void;
+  setUser: (u: { name: string; email: string }) => void;
 }) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [editable, setEditable] = useState(false);
+
+  const [emailError, setEmailError] = useState("");
+  const [currentPwError, setCurrentPwError] = useState("");
+  const [newPwError, setNewPwError] = useState("");
+  const [confirmPwError, setConfirmPwError] = useState("");
+  const [nameError, setNameError] = useState("");
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+  const token = localStorage.getItem("token");
+
+  // Clear field-specific errors as user types
+  const onNameChange = (v: string) => {
+    setName(v);
+    if (nameError) setNameError("");
+  }
+  const onEmailChange = (v: string) => {
+    setEmail(v);
+    if (emailError) setEmailError("");
+  };
+  const onCurrentPwChange = (v: string) => {
+    setCurrentPassword(v);
+    if (currentPwError) setCurrentPwError("");
+  };
+  const onNewPwChange = (v: string) => {
+    setNewPassword(v);
+    if (newPwError) setNewPwError("");
+  };
+  const onConfirmPwChange = (v: string) => {
+    setConfirmPassword(v);
+    if (confirmPwError) setConfirmPwError("");
+  };
 
   useEffect(() => {
     setName(user.name);
     setEmail(user.email);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setEditable(false);
   }, [user]);
-  
+
   if (!open) return null;
+
+
+  async function handleSubmit() {
+    let valid = true;
+
+    const body: any = { };
+  
+    if (name.trim() === "") {
+      setNameError("Please enter your name.");
+      valid = false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email.");
+      valid = false;
+    }
+    if (newPassword.trim()) {
+      if (!passwordRegex.test(newPassword)) {
+        setNewPwError("Password must be 8+ characters with letters & numbers.");
+        valid = false;
+      }
+      if (!currentPassword.trim()) {
+        setCurrentPwError("Please enter your current password.");
+        valid = false;
+      }
+      if (newPassword !== confirmPassword) {
+        setConfirmPwError("New passwords do not match.");
+        valid = false;
+      }
+    }
+    if (!valid) return; // X call API if there is an error
+
+    if (name.trim() !== user.name) {
+      body.name = name;
+    }
+    if (email !== user.email) {
+      body.email = email;
+    }
+    if (newPassword.trim()) {
+      body.currentPassword = currentPassword;
+      body.newPassword = newPassword;
+    }
+    
+    // X call API if there is no change
+    if (Object.keys(body).length === 0) {
+      onClose();
+      setEditable(false);
+      return;
+    }    
+  
+    const res = await fetch("/api/user/edit", {
+      method: "PUT",
+      headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),        
+    });
+
+    // Catch email duplicate and wrong password
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (data?.error) {
+        if (data.error.includes("Email")) {
+          setEmailError(data.error);
+        } else if (data.error.includes("password")) {
+          setCurrentPwError(data.error);
+        } else {
+          alert(data.error);
+        }
+      } else {
+        alert("Something went wrong. Please try again.");
+      }
+      return;
+    }    
+
+    if (data?.name) setName(data.name);
+    if (data?.email) setEmail(data.email);
+    localStorage.setItem("name", data.name);
+    localStorage.setItem("email", data.email);
+    if (data?.token) localStorage.setItem("token", data.token);
+
+    setUser({ name: data.name, email: data.email });
+
+    setEditable(false);
+    // Clear password fields
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+
+    // Clear all error messages
+    setNameError("");
+    setEmailError("");
+    setCurrentPwError("");
+    setNewPwError("");
+    setConfirmPwError("");
+
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
@@ -30,63 +169,129 @@ export default function ProfileModal({
 
         <div className="flex items-center justify-center mb-4">
           <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-600 text-white text-2xl font-bold">
-            {name?.[0] ?? "U"}
+            {name?.[0]?.toUpperCase() ?? "U"}
           </div>
         </div>
 
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave({ name, email });
-            onClose();
-          }}
-        >
-          <div>
-            <label className="mb-1 block text-sm font-medium">Name</label>
-            <input
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        {/* --- Name --- */}
+        <div>
+          <label className="mb-1 block text-sm font-medium">Name</label>
+          <input
+            disabled={!editable}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+          />
+          {nameError && <p className="text-sm text-red-500 mt-1">{nameError}</p>}
+        </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Email</label>
-            <input
-              type="email"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+        {/* --- Email --- */}
+        <div>
+          <label className="mb-1 mt-4 block text-sm font-medium">Email</label>
+          <input
+            disabled={!editable}
+            type="email"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+          />
+          {emailError && <p className="text-sm text-red-500 mt-1">{emailError}</p>}
+        </div>
 
-          <div className="mt-4 flex items-center justify-between">
+        {/* --- Password section --- */}
+        {editable && (
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Current Password</label>
+              <input
+                type="password"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                value={currentPassword}
+                onChange={(e) => onCurrentPwChange(e.target.value)}
+              />
+              {currentPwError && <p className="text-sm text-red-500 mt-1">{currentPwError}</p>}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">New Password</label>
+              <input
+                type="password"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                value={newPassword}
+                onChange={(e) => onNewPwChange(e.target.value)}
+              />
+              {newPwError && <p className="text-sm text-red-500 mt-1">{newPwError}</p>}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Confirm New Password</label>
+              <input
+                type="password"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                value={confirmPassword}
+                onChange={(e) => onConfirmPwChange(e.target.value)}
+              />
+              {confirmPwError && <p className="text-sm text-red-500 mt-1">{confirmPwError}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* --- Footer Buttons --- */}
+        <div className="mt-6 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="text-emerald-700 hover:underline"
+          >
+            Log out
+          </button>
+
+          <div className="space-x-2">
             <button
               type="button"
-              onClick={onLogout}
-              className="text-emerald-700 hover:underline"
+              onClick={() => {
+                // Clear password fields
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+
+                // Revert fields to original user values
+                setName(user.name);
+                setEmail(user.email);
+
+                // Clear all error messages
+                setNameError("");
+                setEmailError("");
+                setCurrentPwError("");
+                setNewPwError("");
+                setConfirmPwError("");
+
+                setEditable(false);
+
+                onClose();
+              }}
+              className="rounded-lg border px-4 py-2 hover:bg-gray-50"
             >
-              Log out
+              Cancel
             </button>
 
-            <div className="space-x-2">
+            {editable ? (
               <button
                 type="button"
-                onClick={onClose}
-                className="rounded-lg border px-4 py-2 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
+                onClick={handleSubmit}
                 className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
               >
                 Save
               </button>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditable(true)}
+                className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+              >
+                Edit
+              </button>
+            )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

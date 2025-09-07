@@ -33,7 +33,7 @@ export default function Layout({
               className="grid h-9 w-9 place-items-center rounded-full bg-white text-emerald-600 font-bold border shadow-sm"
               aria-label="Open profile"
             >
-              {user.name?.[0] ?? "U"}
+              {user.name?.[0].toUpperCase() ?? "U"}
             </button>
           ) : (
             <nav className="flex items-center gap-3">

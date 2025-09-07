@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Layout from "./_Layout";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
-type Deck = { id: string; title: string; count: number };
+type Deck = { id: string; title: string; count: number; isPublic: boolean };
 
 type ApiDeck = {
   id: string | number;
   title: string;
-  numQuestions?: number;
+  count?: number;
+  isPublic: boolean;
   type?: "MCQ" | "FLASHCARD";
 };
 
@@ -24,7 +24,8 @@ export default function Dashboard() {
     return {
       id: String(d.id),
       title: d.title,
-      count: (d.numQuestions ?? 0) as number,
+      count: (d.count ?? 0) as number,
+      isPublic: d.isPublic,
     };
   }
 
@@ -69,8 +70,6 @@ export default function Dashboard() {
 
   const handleAddMCQ = () => nav("/MCQ");
   const handleAddFlash = () => nav("/flashcards/new");
-  const handleLearn = (id: string) => nav(`/learn/${id}`);
-  const handleEdit = (id: string) => nav(`/decks/${id}/edit`);
 
   return (
     <>
@@ -86,11 +85,11 @@ export default function Dashboard() {
         {mcq === null ? (
           <SkeletonGrid />
         ) : mcq.length === 0 ? (
-          <EmptyState message="No public MCQ sets yet. Click Add to create one." />
+          <EmptyState message="No MCQ sets yet. Click Add to create one." />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {mcq.map((d) => (
-              <DeckCard key={d.id} deck={d} onLearn={handleLearn} onEdit={handleEdit} />
+              <DeckCard key={d.id} deck={d} />
             ))}
           </div>
         )}
@@ -102,11 +101,11 @@ export default function Dashboard() {
         {flash === null ? (
           <SkeletonGrid />
         ) : flash.length === 0 ? (
-          <EmptyState message="No public flashcard sets yet. Click Add to create one." />
+          <EmptyState message="No flashcard sets yet. Click Add to create one." />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {flash.map((d) => (
-              <DeckCard key={d.id} deck={d} onLearn={handleLearn} onEdit={handleEdit} />
+              <DeckCard key={d.id} deck={d} />
             ))}
           </div>
         )}

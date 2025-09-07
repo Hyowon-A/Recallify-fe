@@ -69,7 +69,7 @@ export default function AuthModal({
       valid = false;
     }
 
-    if (!valid) return; // ⛔️ don't submit if invalid
+    if (!valid) return;
 
     const endpoint = mode === "login" ? "/api/user/login" : "/api/user/register";
     const payload =

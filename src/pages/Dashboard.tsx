@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
-type Deck = { id: string; title: string; count: number };
+type Deck = { id: string; title: string; count: number; isPublic: boolean };
 
 type ApiDeck = {
   id: string | number;
   title: string;
-  numQuestions?: number;
+  count?: number;
+  isPublic: boolean;
   type?: "MCQ" | "FLASHCARD";
 };
 
@@ -23,7 +24,8 @@ export default function Dashboard() {
     return {
       id: String(d.id),
       title: d.title,
-      count: (d.numQuestions ?? 0) as number,
+      count: (d.count ?? 0) as number,
+      isPublic: d.isPublic,
     };
   }
 
@@ -69,8 +71,6 @@ export default function Dashboard() {
   const handleAddMCQ = () => nav("/MCQ");
   const handleAddFlash = () => nav("/flashcards/new");
 
-  const openDetails = (d: Deck) => nav(`/decks/${d.id}`, { state: { id: d.id, title: d.title, count: d.count } });
-
   return (
     <>
       {/* MCQ sets */}
@@ -105,7 +105,7 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {flash.map((d) => (
-              <DeckCard key={d.id} deck={d} onOpen={() => openDetails(d)} />
+              <DeckCard key={d.id} deck={d} />
             ))}
           </div>
         )}
