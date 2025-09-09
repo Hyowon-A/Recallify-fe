@@ -134,14 +134,14 @@ export default function LearnMCQ() {
     if (index + 1 >= questions.length) {
       setShowResults(true);
       try {
-        const res = await fetch("/api/mcqScore/store", {
+        const res = await fetch("/api/score/store", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            mcqSetId: setId,
+            setId: setId,
             score: score,
           }),
         });

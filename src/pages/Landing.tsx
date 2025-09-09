@@ -1,4 +1,3 @@
-import Layout from "./_Layout";
 type Props = { onGetStarted: () => void };
 
 export default function Landing({ onGetStarted }: Props) {

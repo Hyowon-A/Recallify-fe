@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import DeckDeleteModal from "../components/DeckDeleteModal";
@@ -56,7 +56,7 @@ export default function DeckDetails() {
     setDeleting(true);
     try {
       const token = localStorage.getItem("token") ?? "";
-      await fetch(`/api/mcqSet/delete/${setId}`, {
+      await fetch(`/api/set/delete/${setId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -77,7 +77,7 @@ export default function DeckDetails() {
     async function loadMetaIfNeeded() {
       if (meta) return; // already have it from location.state
       try {
-        const res = await fetch(`/api/mcqSet/meta/${setId}`, {
+        const res = await fetch(`/api/set/meta/${setId}`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: ctl.signal,
         });
@@ -124,7 +124,7 @@ export default function DeckDetails() {
 
   useEffect(() => {
     async function fetchScores() {
-      const res = await fetch(`/api/mcqScore/get/${setId}`, {
+      const res = await fetch(`/api/score/get/${setId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

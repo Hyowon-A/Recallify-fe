@@ -45,7 +45,7 @@ export default function EditDeckPage() {
         body.deletedIds = Array.from(deletedIds);
       }
 
-      const res = await fetch("/api/mcqSet/edit", {
+      const res = await fetch("/api/set/mcq/edit", {
         method: "POST",
         headers: {
         "Content-Type": "application/json",

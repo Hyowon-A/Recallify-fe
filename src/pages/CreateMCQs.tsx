@@ -39,7 +39,7 @@ export default function CreateMCQs() {
     setLoading(true);
 
     // 1) Create the set
-    const createRes = await fetch("/api/mcqSet/create", {
+    const createRes = await fetch("/api/set/create", {
         method: "POST",
         headers: {
         "Content-Type": "application/json",

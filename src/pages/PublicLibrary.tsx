@@ -37,11 +37,11 @@ export default function Dashboard() {
       try {
         setError(null);
         const [mcqRes, flashRes] = await Promise.all([
-          fetch("/api/mcqSet/public", {
+          fetch("/api/set/mcq/public", {
             headers: { Authorization: `Bearer ${token}` },
             signal: ctl.signal,
           }),
-          fetch("/api/mcqSet/public", {
+          fetch("/api/set/mcq/public", {
             headers: { Authorization: `Bearer ${token}` },
             signal: ctl.signal,
           }),

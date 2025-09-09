@@ -78,19 +78,22 @@ export default function ProfileModal({
       setEmailError("Please enter a valid email.");
       valid = false;
     }
+    if (!currentPassword.trim()) {
+      setCurrentPwError("Please enter your current password.");
+      valid = false;
+    }
     if (newPassword.trim()) {
       if (!passwordRegex.test(newPassword)) {
         setNewPwError("Password must be 8+ characters with letters & numbers.");
-        valid = false;
-      }
-      if (!currentPassword.trim()) {
-        setCurrentPwError("Please enter your current password.");
         valid = false;
       }
       if (newPassword !== confirmPassword) {
         setConfirmPwError("New passwords do not match.");
         valid = false;
       }
+    } else {
+      setNewPwError("Please enter a new password.");
+      valid = false;
     }
     if (!valid) return; // X call API if there is an error
 
