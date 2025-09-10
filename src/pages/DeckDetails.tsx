@@ -2,23 +2,28 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import DeckDeleteModal from "../components/DeckDeleteModal";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-type DeckMeta = { id: string; title: string; count: number; isPublic?: boolean };
-type ApiDeckMeta = { id: string | number; title: string; count?: number; isPublic?: boolean };
+type DeckType = "MCQ" | "FLASHCARD";
+
+type DeckMeta = { id: string; title: string; count: number; isPublic?: boolean; type: DeckType; isOwner: boolean };
+type ApiDeckMeta = { id: string | number; title: string; count?: number; isPublic?: boolean; type: DeckType; isOwner: boolean };
 
 type Option = { id: string; option: string; correct?: boolean; explanation?: string };
 type Question = { id: string; question: string; options: Option[]; explanation?: string };
 type ApiOption = { id?: string; option?: string; text?: string; correct?: boolean; explanation?: string };
 type ApiMcq = { id: string | number; question?: string; prompt?: string; options?: ApiOption[]; explanation?: string };
 
+type Flashcard = { id: string; front: string; back: string };
+type ApiFlashcard = { id: string | number; front?: string; back?: string };
+
 const mapMeta = (d: ApiDeckMeta): DeckMeta => ({
   id: String(d.id),
   title: d.title,
   count: Number(d.count ?? 0),
   isPublic: Boolean(d.isPublic ?? false),
+  type: d.type,
+  isOwner: d.isOwner,
 });
 
 const mapQuestion = (q: ApiMcq, idx: number): Question => ({
@@ -33,6 +38,12 @@ const mapQuestion = (q: ApiMcq, idx: number): Question => ({
   })),
 });
 
+const mapCard = (c: ApiFlashcard, idx: number): Flashcard => ({
+  id: String(c.id ?? idx),
+  front: c.front ?? "",
+  back: c.back ?? "",
+});
+
 export default function DeckDetails() {
   const { setId } = useParams<{ setId: string }>();
   const nav = useNavigate();
@@ -40,16 +51,19 @@ export default function DeckDetails() {
   const passedMeta = (location.state as DeckMeta | undefined) ?? undefined;
 
   const [meta, setMeta] = useState<DeckMeta | null>(passedMeta ?? null);
+
+  // Content states
   const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [cards, setCards] = useState<Flashcard[] | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
-  const token = localStorage.getItem("token") ?? "";
-  const [scores, setScores] = useState<{ score: number; takenAt: string }[] >([]);
 
+  const token = localStorage.getItem("token") ?? "";
+  const [scores, setScores] = useState<{ score: number; takenAt: string }[]>([]); // MCQ only
 
   const handleDelete = async () => {
     if (!setId) return;
@@ -60,7 +74,6 @@ export default function DeckDetails() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      // navigate back to dashboard after delete
       nav("/dashboard");
     } catch (e) {
       console.error(e);
@@ -69,13 +82,12 @@ export default function DeckDetails() {
     }
   };
 
-  // Fetch meta ONLY if we didn't get it from Dashboard (hybrid)
+  // Fetch meta if not provided (hybrid)
   useEffect(() => {
     if (!setId) return;
     const ctl = new AbortController();
-
     async function loadMetaIfNeeded() {
-      if (meta) return; // already have it from location.state
+      if (meta) return;
       try {
         const res = await fetch(`/api/set/meta/${setId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -88,71 +100,99 @@ export default function DeckDetails() {
         if (e.name !== "AbortError") setErr(e.message || "Failed to load deck info");
       }
     }
-
     loadMetaIfNeeded();
     return () => ctl.abort();
-    // meta in deps so we don't re-fetch once it becomes available
-  }, [setId, meta]);
+  }, [setId, meta, token]);
 
-  // Always fetch questions
+  // Fetch content (MCQs or Flashcards) after we know meta.type
   useEffect(() => {
-    if (!setId) return;
+    if (!setId || !meta?.type) return;
     const ctl = new AbortController();
 
-    async function loadQuestions() {
+    async function loadContent() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`/api/mcq/get/${setId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: ctl.signal,
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const data: ApiMcq[] | { mcqs: ApiMcq[] } = await res.json();
-        const mcqs = Array.isArray(data) ? data : (data.mcqs ?? []);
-        setQuestions(mcqs.map(mapQuestion));
+        if (meta?.type === "MCQ") {
+          const res = await fetch(`/api/mcq/get/${setId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: ctl.signal,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data: ApiMcq[] | { mcqs: ApiMcq[] } = await res.json();
+          const mcqs = Array.isArray(data) ? data : (data.mcqs ?? []);
+          setQuestions(mcqs.map(mapQuestion));
+          setCards(null);
+        } else {
+          const res = await fetch(`/api/flashcard/get/${setId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: ctl.signal,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data: ApiFlashcard[] | { cards: ApiFlashcard[] } = await res.json();
+          const arr = Array.isArray(data) ? data : (data.cards ?? []);
+          setCards(arr.map(mapCard));
+          setQuestions(null);
+        }
       } catch (e: any) {
-        if (e.name !== "AbortError") setErr(e.message || "Failed to load questions");
+        if (e.name !== "AbortError") setErr(e.message || "Failed to load content");
       } finally {
         setLoading(false);
       }
     }
 
-    loadQuestions();
+    loadContent();
     return () => ctl.abort();
-  }, [setId]);
+  }, [setId, meta?.type, token]);
 
+  // Scores only for MCQ sets
   useEffect(() => {
-    async function fetchScores() {
-      const res = await fetch(`/api/score/get/${setId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
-      setScores(data); // [{ score: 7, total: 10, takenAt: "2025-09-05T..." }]
-    }
-  
-    fetchScores();
-  }, [setId]);
-  
+    if (!setId || meta?.type !== "MCQ") return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/score/get/${setId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (alive) setScores(data || []);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [setId, meta?.type, token]);
 
-  const startQuiz = () => {
-    nav(`/learn/${setId}`, { state: { questions, deckTitle: meta?.title } });
-  };  
-  const editDeck = () => nav(`/sets/${setId}/edit`, {
-    state: {
-      meta,
-      questions
+  const startStudy = () => {
+    if (!setId) return;
+    if (meta?.type === "FLASHCARD") {
+      nav(`/learn/Flashcard/${setId}`, { state: { mode: "flashcard", cards, deckTitle: meta?.title } });
+    } else {
+      nav(`/learn/MCQ/${setId}`, { state: { mode: "mcq", questions, deckTitle: meta?.title } });
     }
-  });  
+  };
+
+  const editDeck = () => {
+    if (meta?.type === "FLASHCARD") {
+      nav(`/sets/${setId}/Flashcard/edit`, { state: { meta, cards }});
+    } else {
+      nav(`/sets/${setId}/MCQ/edit`, { state: { meta, questions, cards }});
+    }
+  }
+
   const deleteDeck = () => setDeleteOpen(true);
 
-  // Loading state: if we have meta from state, show it immediately and skeleton questions
-  if (loading && !questions) {
+  // Loading skeleton
+  const contentMissing =
+    (meta?.type === "MCQ" && !questions) || (meta?.type === "FLASHCARD" && !cards);
+
+  if ((loading && contentMissing) || !meta) {
     return (
       <div className="mx-auto max-w-[1100px] px-4 py-6">
-        <MetaHeader meta={meta ?? { id: setId ?? "", title: "Loading…", count: 0 }}/>
+        <MetaHeader meta={meta ?? { id: setId ?? "", title: "Loading…", count: 0, type: "MCQ", isOwner: false}} />
         <QuestionsSkeleton />
       </div>
     );
@@ -166,60 +206,51 @@ export default function DeckDetails() {
     );
   }
 
-  if (!meta || !questions) {
-    return (
-      <div className="mx-auto max-w-[1100px] px-4 py-6">
-        <div className="rounded-xl border bg-white p-4 text-gray-600">Deck not found.</div>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-6">
-      <MetaHeader meta={meta} onStart={startQuiz} onEdit={editDeck} onDelete={deleteDeck}/>
-      <div className="rounded-xl bg-white p-6 shadow">
-        <h2 className="font-semibold text-lg mb-4">Score Progress (Last 5 Attempts)</h2>
+      <MetaHeader
+        meta={meta}
+        onStart={startStudy}
+        onEdit={editDeck}
+        onDelete={deleteDeck}
+      />
 
-        {scores.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart
-              data={scores.slice(-5).map((s) => ({
-                date: new Date(s.takenAt).toLocaleDateString("en-GB", {
-                  month: "short",
-                  day: "numeric",
-                }),
-                score: s.score,
-              }))}
-              margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="score"
-                stroke="#10B981"
-                strokeWidth={3}
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="text-sm text-gray-500">No attempts yet. Try this quiz to see progress here.</div>
-        )}
-      </div>
+      {/* Score chart only for MCQ */}
+      {meta.type === "MCQ" && (
+        <div className="rounded-xl bg-white p-6 shadow">
+          <h2 className="font-semibold text-lg mb-4">Score Progress (Last 5 Attempts)</h2>
+          {scores.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={scores.slice(-5).map((s) => ({
+                  date: new Date(s.takenAt).toLocaleDateString("en-GB", { month: "short", day: "numeric" }),
+                  score: s.score,
+                }))}
+                margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="score" stroke="#10B981" strokeWidth={3} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-sm text-gray-500">No attempts yet. Try this quiz to see progress here.</div>
+          )}
+        </div>
+      )}
 
-
-      <QuestionsPreview questions={questions} />
+      {meta.type === "MCQ" && questions && <QuestionsPreview questions={questions} />}
+      {meta.type === "FLASHCARD" && cards && <FlashcardsPreview cards={cards} />}
 
       <DeckDeleteModal
-            open={deleteOpen}
-            itemName={meta?.title}
-            loading={deleting}
-            onDelete={handleDelete}
-            onClose={() => setDeleteOpen(false)}
-        />
+        open={deleteOpen}
+        itemName={meta?.title}
+        loading={deleting}
+        onDelete={handleDelete}
+        onClose={() => setDeleteOpen(false)}
+      />
     </div>
   );
 }
@@ -228,13 +259,15 @@ function MetaHeader({
   meta,
   onStart,
   onEdit,
-  onDelete
+  onDelete,
 }: {
   meta: DeckMeta;
   onStart?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
+  const unit = meta.type === "FLASHCARD" ? "card" : "question";
+  const startLabel = meta.type === "FLASHCARD" ? "Start review" : "Start quiz";
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
       <div>
@@ -245,28 +278,29 @@ function MetaHeader({
         </div>
         <h1 className="text-2xl font-semibold">{meta.title}</h1>
         <div className="mt-1 text-sm text-gray-600">
-          {meta.count} question{meta.count === 1 ? "" : "s"} ·{" "}
+          {meta.count} {unit}
+          {meta.count === 1 ? "" : "s"} ·{" "}
           {meta.isPublic ? <span className="text-emerald-700">Public</span> : <span>Private</span>}
         </div>
       </div>
 
       <div className="flex gap-2">
-        {onEdit && (
+        {onEdit && meta.isOwner && (
           <button onClick={onEdit} className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
             Edit
           </button>
         )}
-        {onDelete && (
-            <button onClick={onDelete} className="rounded-lg border p-2 text-red-500 hover:bg-red-50">
-                <Trash2 className="w-4 h-4" />
-            </button>
+        {onDelete && meta.isOwner && (
+          <button onClick={onDelete} className="rounded-lg border p-2 text-red-500 hover:bg-red-50">
+            <Trash2 className="w-4 h-4" />
+          </button>
         )}
-        {onStart && (
+        {onStart && meta.isOwner && (
           <button
             onClick={onStart}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            Start quiz
+            {startLabel}
           </button>
         )}
       </div>
@@ -324,6 +358,28 @@ function QuestionsPreview({ questions }: { questions: Question[] }) {
               </div>
             </details>
           )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FlashcardsPreview({ cards }: { cards: Flashcard[] }) {
+  return (
+    <div className="space-y-4 mt-5">
+      {cards.map((c, idx) => (
+        <div key={c.id} className="rounded-xl border bg-white p-5">
+          <div className="mb-2 text-sm text-gray-500">Card {idx + 1}</div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border bg-gray-50 p-3">
+              <div className="text-xs uppercase text-gray-500 mb-1">Front</div>
+              <div className="text-sm whitespace-pre-wrap">{c.front}</div>
+            </div>
+            <div className="rounded-lg border bg-gray-50 p-3">
+              <div className="text-xs uppercase text-gray-500 mb-1">Back</div>
+              <div className="text-sm whitespace-pre-wrap">{c.back}</div>
+            </div>
+          </div>
         </div>
       ))}
     </div>

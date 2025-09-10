@@ -7,11 +7,13 @@ import Dashboard from "./pages/Dashboard";
 import PublicLibrary from "./pages/PublicLibrary";
 import LearnMCQ from "./pages/LearnMCQ";
 import _Layout from "./pages/_Layout"
-import CreateMCQs from "./pages/CreateMCQs";
+import Create from "./pages/Create";
 import Layout from "./pages/_Layout";
 import DeckDetails from "./pages/DeckDetails";
-import EditMCQSet from "./pages/EditMCQSet";
+import EditMCQs from "./pages/EditMCQs";
 import { isTokenExpired } from "./jwt";
+import EditFlashcards from "./pages/EditFlashcards";
+import LearnFlashcard from "./pages/LearnFlashcard";
 
 type User = { name: string; email: string } | null;
 
@@ -101,10 +103,18 @@ export default function App() {
             }
           />
           <Route
-            path="/learn/:setId"
+            path="/learn/MCQ/:setId"
             element={
               <ProtectedRoute user={user}>
                 <LearnMCQ />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/learn/Flashcard/:setId"
+            element={
+              <ProtectedRoute user={user}>
+                <LearnFlashcard />
               </ProtectedRoute>
             }
           />
@@ -117,14 +127,22 @@ export default function App() {
             }
           />
           <Route
-            path="/sets/:setId/edit"
+            path="/sets/:setId/MCQ/edit"
             element={
               <ProtectedRoute user={user}>
-                <EditMCQSet  />
+                <EditMCQs  />
               </ProtectedRoute>
             }
           />
-          <Route path="/MCQ" element={<CreateMCQs />} />
+          <Route
+            path="/sets/:setId/Flashcard/edit"
+            element={
+              <ProtectedRoute user={user}>
+                <EditFlashcards  />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/create" element={<Create />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

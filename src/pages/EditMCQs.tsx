@@ -9,9 +9,9 @@ type Question = {
   explanation?: string;
 };
 
-type DeckMeta = { id: string; title: string; isPublic?: boolean };
+type DeckMeta = { id: string; title: string; isPublic?: boolean; type: string};
 
-export default function EditDeckPage() {
+export default function EditMCQs() {
   const location = useLocation();
   const state = location.state as { meta: DeckMeta; questions: Question[] };
 
@@ -30,9 +30,9 @@ export default function EditDeckPage() {
     setSaving(true);
 
     try {
-      // TODO: send updated title, public/private, and questions to your backend 
       const body: any = {
         setId: state.meta.id,
+        type: state.meta.type,
       }
 
       if (title !== state.meta.title && title.trim() !== "") {
@@ -45,7 +45,7 @@ export default function EditDeckPage() {
         body.deletedIds = Array.from(deletedIds);
       }
 
-      const res = await fetch("/api/set/mcq/edit", {
+      const res = await fetch("/api/set/edit", {
         method: "POST",
         headers: {
         "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export default function EditDeckPage() {
       <Link to={`/sets/${state.meta.id}`} className="text-sm text-emerald-700 hover:underline">
             ← Back
       </Link>
-      <h1 className="text-2xl font-semibold mb-4">Edit Deck</h1>
+      <h1 className="text-2xl font-semibold mb-4">Edit {title}</h1>
 
       <div className="mb-4 flex items-center justify-between gap-3">
         {/* Left side: title input + public/private toggle */}
@@ -140,7 +140,7 @@ function QuestionsPreview({
           {onDelete && (
             <button
               onClick={() => onDelete(idx)}
-              className="absolute top-3 right-3 rounded-md border border-red-200 bg-white p-2 text-red-500 hover:bg-red-50">
+              className="absolute top-3 right-3 rounded-md bg-white p-2 text-red-500 hover:bg-red-50">
               <Trash2 className="h-4 w-4" />
             </button>
           )}

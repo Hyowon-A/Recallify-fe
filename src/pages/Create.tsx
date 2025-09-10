@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-type MCQ = { id: string; question: string; options: string[]; correctIndex: number };
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function CreateMCQs() {
+  const loc = useLocation() as { state?: { type?: "MCQ" | "FLASHCARD" } };
+
   const [deckTitle, setDeckTitle] = useState("");
-  const [deckType, setDeckType] = useState<"MCQ" | "FLASHCARD">("MCQ");
+  const [deckType, setDeckType] = useState<"MCQ" | "FLASHCARD">(loc.state?.type ?? "MCQ");
   const [activeTab, setActiveTab] = useState<"upload" | "paste">("upload");
 
   const [file, setFile] = useState<File | null>(null);
@@ -66,10 +66,15 @@ export default function CreateMCQs() {
     if (file) form.append("file", file);
     if (paste && paste.trim()) form.append("text", paste.trim());
 
-    const genRes = await fetch("/api/mcq/generate-from-pdf", {
-        method: "POST",
-        body: form,
+    const genUrl =
+      deckType === "MCQ" ? "/api/mcq/generate-from-pdf" : "/api/flashcard/generate-from-pdf";  
+
+    const genRes = await fetch(genUrl, {
+      method: "POST",
+      body: form,
     });
+
+    if (!genRes.ok) throw new Error(await genRes.text());
 
     if (!genRes.ok) {
         const msg = await genRes.text();
@@ -86,7 +91,9 @@ export default function CreateMCQs() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Create MCQs</h1>
+          <h1 className="text-2xl font-bold">
+            {deckType === "MCQ" ? "Create MCQs" : "Create Flashcards"}
+          </h1>
           <p className="text-sm text-gray-500">Upload notes or paste text → AI generates questions.</p>
         </div>
         <div className="flex gap-3">
@@ -102,7 +109,7 @@ export default function CreateMCQs() {
             onChange={e => setDeckType(e.target.value as any)}
           >
             <option value="MCQ">MCQ</option>
-            {/* <option value="FLASHCARD">Flashcards</option> */}
+            <option value="FLASHCARD">Flashcard</option>
           </select>
         </div>
       </div>
@@ -193,7 +200,9 @@ export default function CreateMCQs() {
             loading ? "bg-emerald-300" : "bg-emerald-600 hover:bg-emerald-700"
             }`}
         >
-            {loading ? "Generating…" : "Generate MCQs"}
+            {loading
+              ? "Generating…"
+              : deckType === "MCQ" ? "Generate MCQs" : "Generate Flashcards"}
         </button>
         </div>
 

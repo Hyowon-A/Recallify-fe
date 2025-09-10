@@ -5,7 +5,6 @@ import FinalResultModal from "../components/FinalResultModal";
 type Option = { id: string; option: string; correct?: boolean; explanation?: string};
 type Question = { id: string; question: string; options: Option[]; explanation?: string};
 
-
 type ApiOption = { id?: string; option?: string; correct?: boolean; explanation?: string };
 type ApiMcq = { id: string | number; question?: string; prompt?: string; options?: ApiOption[]; explanation?: string };
 
@@ -83,8 +82,6 @@ export default function LearnMCQ() {
         setDeckTitle(data.title ?? "MCQ Deck");
         setQuestions(questions);
 
-        // Optional: shuffle options per question (uncomment if desired)
-        // qs.forEach(q => q.options.sort(() => Math.random() - 0.5));
       } catch (e: any) {
         if (e.name !== "AbortError") setErr(e.message || "Network error");
       } finally {

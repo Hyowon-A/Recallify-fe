@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
-type Deck = { id: string; title: string; count: number; isPublic: boolean };
+type Deck = { id: string; title: string; count: number; isPublic: boolean, type: "MCQ" | "FLASHCARD", isOwner: boolean};
 
 type ApiDeck = {
   id: string | number;
   title: string;
   count?: number;
-  isPublic: boolean;
-  type?: "MCQ" | "FLASHCARD";
+  isPublic?: boolean;
+  type: "MCQ" | "FLASHCARD";
+  isOwner: boolean;
 };
 
 export default function Dashboard() {
@@ -19,57 +20,54 @@ export default function Dashboard() {
   const [flash, setFlash] = useState<Deck[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // small helper to map API → UI
-  function mapDeck(d: ApiDeck): Deck {
-    return {
-      id: String(d.id),
-      title: d.title,
-      count: (d.count ?? 0) as number,
-      isPublic: d.isPublic,
-    };
-  }
+  const mapDeck = (d: ApiDeck): Deck => ({
+    id: String(d.id),
+    title: d.title,
+    count: Number(d.count ?? 0),
+    isPublic: Boolean(d.isPublic),
+    type: d.type,
+    isOwner: d.isOwner
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const ctl = new AbortController();
 
-    async function fetchDecks() {
+    async function fetchAll() {
       try {
         setError(null);
-        const [mcqRes, flashRes] = await Promise.all([
-          fetch("/api/set/mcq/my", {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: ctl.signal,
-          }),
-          fetch("/api/set/mcq/my", {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: ctl.signal,
-          }),
-        ]);
+        setMcq(null); setFlash(null); // show skeletons
 
-        if (!mcqRes.ok || !flashRes.ok) {
-          const m1 = mcqRes.ok ? "" : await mcqRes.text();
-          const m2 = flashRes.ok ? "" : await flashRes.text();
-          throw new Error(m1 || m2 || "Failed to load decks");
-        }
+        const res = await fetch("/api/set/my", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: ctl.signal,
+        });
+        if (!res.ok) throw new Error(await res.text());
 
-        const mcqData: ApiDeck[] = await mcqRes.json();
-        const flashData: ApiDeck[] = await flashRes.json();
-        setMcq(mcqData.map(mapDeck));
-        setFlash(flashData.map(mapDeck));
+        const all: ApiDeck[] = await res.json();
+
+        // Partition into MCQ and Flashcards in one pass
+        const [mcqs, flashes] = all.reduce<[Deck[], Deck[]]>((acc, d) => {
+          const deck = mapDeck(d);
+          if (d.type === "MCQ") acc[0].push(deck);
+          else if (d.type === "FLASHCARD") acc[1].push(deck);
+          return acc;
+        }, [[], []]);
+
+        setMcq(mcqs);
+        setFlash(flashes);
       } catch (e: any) {
-        if (e.name !== "AbortError") setError(e.message || "Network error");
-        setMcq([]);
-        setFlash([]);
+        if (e.name !== "AbortError") setError(e.message || "Failed to load decks");
+        setMcq([]); setFlash([]);
       }
     }
 
-    fetchDecks();
+    fetchAll();
     return () => ctl.abort();
   }, []);
 
-  const handleAddMCQ = () => nav("/MCQ");
-  const handleAddFlash = () => nav("/flashcards/new");
+const handleAddMCQ = () => nav("/create", { state: { type: "MCQ" } });
+const handleAddFlash = () => nav("/create", { state: { type: "FLASHCARD" } });
 
   return (
     <>
@@ -81,7 +79,6 @@ export default function Dashboard() {
             {error}
           </div>
         )}
-
         {mcq === null ? (
           <SkeletonGrid />
         ) : mcq.length === 0 ? (
