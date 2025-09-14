@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
@@ -19,7 +18,6 @@ type ApiDeck = {
 };
 
 export default function PublicLibrary() {
-  const nav = useNavigate();
   const [mcq, setMcq] = useState<Deck[] | null>(null);
   const [flash, setFlash] = useState<Deck[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,14 +71,11 @@ export default function PublicLibrary() {
     return () => ctl.abort();
   }, []);
 
-const handleAddMCQ = () => nav("/create", { state: { type: "MCQ" } });
-const handleAddFlash = () => nav("/create", { state: { type: "FLASHCARD" } });
-
   return (
     <>
       {/* MCQ sets */}
-      <section className="mb-8">
-        <SectionHeader title="MCQ sets" onAdd={handleAddMCQ} />
+      <section className="mb-14">
+        <SectionHeader title="MCQ sets" />
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -101,7 +96,7 @@ const handleAddFlash = () => nav("/create", { state: { type: "FLASHCARD" } });
 
       {/* Flashcard sets */}
       <section>
-        <SectionHeader title="Flashcard sets" onAdd={handleAddFlash} />
+        <SectionHeader title="Flashcard sets"/>
         {flash === null ? (
           <SkeletonGrid />
         ) : flash.length === 0 ? (

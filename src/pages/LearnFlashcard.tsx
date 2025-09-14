@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
 
 type Flashcard = { id: string; front: string; back: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
@@ -72,13 +72,10 @@ function formatInterval(hours: number): string {
 
 export default function LearnFlashcard() {
   const { setId } = useParams<{ setId: string }>();
-  const nav = useNavigate();
   const token = localStorage.getItem("token") || "";
 
   const location = useLocation();
   const state = location.state as { cards?: Flashcard[]; deckTitle?: string } | undefined;
-
-  console.log(state?.cards);
 
   const [cards, setCards] = useState<Flashcard[] | null>(
     state?.cards ? filterLearnAndDue(state.cards) : null
@@ -93,7 +90,6 @@ export default function LearnFlashcard() {
   // session UI state
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [known, setKnown] = useState(0); // like "correct" count
   const [showResults, setShowResults] = useState(false);
 
   // load from API if state missing
@@ -111,7 +107,6 @@ export default function LearnFlashcard() {
         setCards(null);
         setIndex(0);
         setRevealed(false);
-        setKnown(0);
 
         const res = await fetch(`/api/flashcard/get/${setId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -194,7 +189,9 @@ export default function LearnFlashcard() {
   async function handleGrade(grade: number) {
     if (!card) return;
 
-    let res = await fetch(`/api/flashcard/SRS/update/${card.id}`, {
+    handleNext();
+
+    await fetch(`/api/flashcard/SRS/update/${card.id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -207,7 +204,6 @@ export default function LearnFlashcard() {
         repetitions: card.repetitions,
       }),
     })
-    handleNext();
   }
 
   // --- render states
@@ -252,15 +248,10 @@ export default function LearnFlashcard() {
       />
 
       <FinalResultModal
-        correct={known}
+        mode="FLASHCARD"
+        correct={0}
         total={cards.length}
         open={showResults}
-        onRestart={() => {
-          setShowResults(false);
-          setKnown(0);
-          setIndex(0);
-          setRevealed(false);
-        }}
       />
 
       <div className="rounded-2xl border bg-gray-100 p-6 md:p-8">

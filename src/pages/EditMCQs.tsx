@@ -45,7 +45,7 @@ export default function EditMCQs() {
         body.deletedIds = Array.from(deletedIds);
       }
 
-      const res = await fetch("/api/set/edit", {
+      await fetch("/api/set/edit", {
         method: "POST",
         headers: {
         "Content-Type": "application/json",

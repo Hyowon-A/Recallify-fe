@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Meta, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import DeckDeleteModal from "../components/DeckDeleteModal";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -196,6 +196,22 @@ export default function DeckDetails() {
 
   const deleteDeck = () => setDeleteOpen(true);
 
+  async function handleCopy() {
+    const token = localStorage.getItem("token") || "";
+    const res = await fetch(`/api/set/copy/${setId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  
+    if (res.ok) {
+      // const newSetId = await res.json();
+      alert("Set copied! You can now find it in My Library.");
+      nav(`/dashboard`);
+    } else {
+      alert("Failed to copy set.");
+    }
+  }
+
   if (!meta) {
     // Full page skeleton
     return (
@@ -244,6 +260,7 @@ export default function DeckDetails() {
         onStart={startStudy}
         onEdit={editDeck}
         onDelete={deleteDeck}
+        onCopy={handleCopy}
       />
 
       {/* Score chart only for MCQ */}
@@ -291,11 +308,13 @@ function MetaHeader({
   onStart,
   onEdit,
   onDelete,
+  onCopy
 }: {
   meta: DeckMeta;
   onStart?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onCopy?: () => void;
 }) {
   const unit = meta.type === "FLASHCARD" ? "card" : "question";
   const startLabel = meta.type === "FLASHCARD" ? "Start review" : "Start quiz";
@@ -344,6 +363,14 @@ function MetaHeader({
           >
             {startLabel}
           </button>
+        )}
+        {!meta.isOwner && (
+          <button
+          onClick={onCopy}
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+        >
+          Save to My Dashboard
+        </button>
         )}
       </div>
     </div>

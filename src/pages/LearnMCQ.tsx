@@ -246,7 +246,9 @@ export default function LearnMCQ() {
   async function handleGrade(grade: number) {
     if (!q) return;
 
-    let res = await fetch(`/api/mcq/SRS/update/${q.id}`, {
+    handleNext();
+
+    await fetch(`/api/mcq/SRS/update/${q.id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -259,7 +261,6 @@ export default function LearnMCQ() {
         repetitions: q.repetitions,
       }),
     })
-    handleNext();
   }
 
   function filterLearnAndDue(questions: Question[]): Question[] {
@@ -325,16 +326,10 @@ export default function LearnMCQ() {
       />
 
       <FinalResultModal
+        mode = "MCQ"
         correct={score}
         total={questions.length}
         open={showResults}
-        onRestart={() => {
-          setShowResults(false);
-          setScore(0);
-          setIndex(0);
-          setSelected(null);
-          setRevealed(false);
-        }}
       />
 
       <div className="rounded-2xl border bg-gray-100 p-6 md:p-8">
