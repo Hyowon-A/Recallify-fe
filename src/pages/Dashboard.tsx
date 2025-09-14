@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
