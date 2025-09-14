@@ -7,21 +7,18 @@ export type Deck = {
   isPublic?: boolean;
   type: "MCQ" | "FLASHCARD";
   isOwner: boolean;
+  newC?: number;   // optional
+  learn?: number; // optional
+  due?: number;   // optional
 };
 
 export default function DeckCard({ deck }: { deck: Deck }) {
   const unit = deck.type === "FLASHCARD" ? "card" : "question";
+
   return (
     <Link
       to={`/sets/${deck.id}`}
-      state={{
-        id: String(deck.id),
-        title: deck.title,
-        count: deck.count,
-        isPublic: !!deck.isPublic,
-        type: deck.type, // "MCQ" | "FLASHCARD"
-        isOwner: deck.isOwner,
-      }}
+      state={deck}
       className="flex justify-between items-start rounded-3xl bg-gray-200 p-6 shadow-sm hover:shadow-md transition cursor-pointer"
     >
       <div>
@@ -33,10 +30,20 @@ export default function DeckCard({ deck }: { deck: Deck }) {
             <span className="text-gray-500">Private</span>
           )}
         </p>
+
+        {/* 🔹 Show progress only if available */}
+        {(deck.isOwner === true) && (
+          <div className="mt-3 flex gap-3 text-xs font-medium">
+            <span className="text-blue-600">New {deck.newC}</span>
+            <span className="text-yellow-600">Learning {deck.learn}</span>
+            <span className="text-red-600">Due {deck.due}</span>
+          </div>
+        )}
       </div>
 
       <div className="text-sm font-medium text-gray-600 whitespace-nowrap mt-1">
-        {deck.count} {unit}{deck.count === 1 ? "" : "s"}
+        {deck.count} {unit}
+        {deck.count === 1 ? "" : "s"}
       </div>
     </Link>
   );

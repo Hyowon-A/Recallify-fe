@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
-type Deck = { id: string; title: string; count: number; isPublic: boolean, type: "MCQ" | "FLASHCARD", isOwner: boolean};
+type Deck = { id: string; title: string; count: number; isPublic: boolean, 
+              type: "MCQ" | "FLASHCARD", isOwner: boolean, newC: number, learn: number, due: number};
 
 type ApiDeck = {
   id: string | number;
@@ -12,6 +13,9 @@ type ApiDeck = {
   isPublic?: boolean;
   type: "MCQ" | "FLASHCARD";
   isOwner: boolean;
+  newC: number;
+  learn: number;
+  due: number;
 };
 
 export default function Dashboard() {
@@ -26,42 +30,46 @@ export default function Dashboard() {
     count: Number(d.count ?? 0),
     isPublic: Boolean(d.isPublic),
     type: d.type,
-    isOwner: d.isOwner
+    isOwner: d.isOwner,
+    newC: d.newC,
+    learn: d.learn,
+    due: d.due
   });
 
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const ctl = new AbortController();
-
+  
     async function fetchAll() {
       try {
         setError(null);
-        setMcq(null); setFlash(null); // show skeletons
-
+        setMcq(null);
+        setFlash(null);
+  
         const res = await fetch("/api/set/my", {
           headers: { Authorization: `Bearer ${token}` },
           signal: ctl.signal,
         });
         if (!res.ok) throw new Error(await res.text());
-
+  
         const all: ApiDeck[] = await res.json();
-
-        // Partition into MCQ and Flashcards in one pass
+  
         const [mcqs, flashes] = all.reduce<[Deck[], Deck[]]>((acc, d) => {
           const deck = mapDeck(d);
           if (d.type === "MCQ") acc[0].push(deck);
           else if (d.type === "FLASHCARD") acc[1].push(deck);
           return acc;
         }, [[], []]);
-
+  
         setMcq(mcqs);
         setFlash(flashes);
       } catch (e: any) {
         if (e.name !== "AbortError") setError(e.message || "Failed to load decks");
-        setMcq([]); setFlash([]);
+        setMcq([]);
+        setFlash([]);
       }
     }
-
+  
     fetchAll();
     return () => ctl.abort();
   }, []);
@@ -72,7 +80,7 @@ const handleAddFlash = () => nav("/create", { state: { type: "FLASHCARD" } });
   return (
     <>
       {/* MCQ sets */}
-      <section className="mb-8">
+      <section className="mb-14">
         <SectionHeader title="MCQ sets" onAdd={handleAddMCQ} />
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

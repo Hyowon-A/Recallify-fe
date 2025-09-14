@@ -2,11 +2,71 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
 
-type Option = { id: string; option: string; correct?: boolean; explanation?: string};
-type Question = { id: string; question: string; options: Option[]; explanation?: string};
+type Option = { id: string; option: string; correct?: boolean; explanation?: string,};
+type Question = { id: string; question: string; options: Option[]; explanation?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 
 type ApiOption = { id?: string; option?: string; correct?: boolean; explanation?: string };
-type ApiMcq = { id: string | number; question?: string; prompt?: string; options?: ApiOption[]; explanation?: string };
+type ApiMcq = { id: string | number; question?: string; prompt?: string; options?: ApiOption[]; explanation?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
+
+function estimateNextInterval(grade: number, ef: number, rep: number, interval: number): string {
+  let nextReps = rep;
+  let nextEf = ef;
+  let nextInterval = 0;
+
+  if (grade < 2) {
+    // Forgot
+    if (rep === 0) {
+      nextInterval = 1;
+    } else {
+      nextInterval = 24; // reset to 1 day
+    }
+    nextReps = 0;
+    nextEf = Math.max(1.3, ef - 0.2); // drop EF
+  } else {
+    // Remembered
+    nextReps += 1;
+
+    if (nextReps === 1) {
+      if (grade === 2) nextInterval = 12;
+      else if (grade === 3) nextInterval = 24;
+      else if (grade === 4) nextInterval = 48;
+    } else if (nextReps === 2) {
+      if (grade === 2) nextInterval = 72;
+      else if (grade === 3) nextInterval = 144;
+      else if (grade === 4) nextInterval = 288;
+    } else {
+      nextInterval = interval * nextEf;
+      if (grade === 2) {
+        nextInterval *= 0.8; // hard review skips EF
+      } else if (grade === 4) {
+        nextInterval *= 1.3; // easy bonus
+      }
+    }
+
+    // EF update (only if ≥ 3)
+    nextEf = ef + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
+    nextEf = Math.max(1.3, nextEf);
+  }
+
+  nextInterval = Math.min(nextInterval, 1440); // 60 days max
+  return formatInterval(nextInterval);
+}
+
+function formatInterval(hours: number): string {
+  if (hours < 1) {
+    return `${Math.round(hours * 60)}m`;
+  }
+  if (hours < 24) {
+    return `${hours.toFixed(1)}h`;
+  }
+
+  const days = hours / 24;
+  if (days < 30) {
+    return `${days.toFixed(1)}d`;
+  }
+
+  return `${(days / 30).toFixed(1)}mo`;
+}
 
 // small helper to map API → UI
 function mapQuestion(q: ApiMcq, qIdx: number): Question {
@@ -20,6 +80,10 @@ function mapQuestion(q: ApiMcq, qIdx: number): Question {
       correct: Boolean(o.correct),
       explanation: o.explanation ?? "",
     })),
+    interval_hours: q.interval_hours,
+    ef: q.ef,
+    repetitions: q.repetitions,
+    srsType: q.srsType,
   };
 }
 
@@ -32,7 +96,8 @@ export default function LearnMCQ() {
 
   const location = useLocation();
   const state = location.state as { questions: Question[]; deckTitle: string } | undefined;
-  const [questions, setQuestions] = useState<Question[] | null>(state?.questions ?? null);
+  const [questions, setQuestions] = useState<Question[] | null>(
+    state?.questions ? filterLearnAndDue(state.questions) : null);
   const [deckTitle, setDeckTitle] = useState<string>(state?.deckTitle ?? "");
 
   const [loading, setLoading] = useState(true);
@@ -76,11 +141,9 @@ export default function LearnMCQ() {
 
         const data = await res.json();
 
-        console.log(data)
-
         const questions: Question[] = (Array.isArray(data) ? data : data.mcqs ?? []).map(mapQuestion);
         setDeckTitle(data.title ?? "MCQ Deck");
-        setQuestions(questions);
+        setQuestions(filterLearnAndDue(questions));
 
       } catch (e: any) {
         if (e.name !== "AbortError") setErr(e.message || "Network error");
@@ -103,13 +166,37 @@ export default function LearnMCQ() {
     [q]
   );
 
+  const gradeButtons = useMemo(() => {
+    if (!q || !revealed) return [];
+  
+    const isCorrect = selected === correctId;
+  
+    const allButtons = [1, 2, 3, 4].map((grade) => {
+      const label = ["Again", "Hard", "Good", "Easy"][grade - 1] ?? `Grade ${grade}`;
+      const intervalText = estimateNextInterval(grade, q.ef, q.repetitions, q.interval_hours);
+      return { grade, label, intervalText };
+    });
+  
+    if (isCorrect) {
+      // correct → only Good/Easy
+      return allButtons.filter((b) => b.grade >= 3);
+    } else {
+      // incorrect → only Again/Hard
+      return allButtons.filter((b) => b.grade <= 2);
+    }
+  }, [q, revealed, selected, correctId]);
+
   // --- Keyboard shortcuts: 1..4 select, Enter to submit/next
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!q) return;
       if (["1", "2", "3", "4"].includes(e.key)) {
-        const i = Number(e.key) - 1;
-        if (q.options[i]) setSelected(q.options[i].id);
+        if (!revealed) {
+          const i = Number(e.key) - 1;
+          if (q.options[i]) setSelected(q.options[i].id);
+        } else {
+          handleGrade(Number(e.key));
+        }
       } else if (e.key === "Enter") {
         if (!revealed && selected) handleSubmit();
         else if (revealed) handleNext();
@@ -155,6 +242,29 @@ export default function LearnMCQ() {
     setSelected(null);
     setRevealed(false);
   }
+
+  async function handleGrade(grade: number) {
+    if (!q) return;
+
+    let res = await fetch(`/api/mcq/SRS/update/${q.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        grade,
+        ef: q.ef,
+        interval_hours: q.interval_hours,
+        repetitions: q.repetitions,
+      }),
+    })
+    handleNext();
+  }
+
+  function filterLearnAndDue(questions: Question[]): Question[] {
+    return questions.filter(q => q.srsType === "newC" || q.srsType === "learn" || q.srsType === "due");
+  }  
 
   const base =
     "w-full text-left rounded-2xl border px-5 py-8 md:py-10 transition";
@@ -246,7 +356,7 @@ export default function LearnMCQ() {
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-3">
-          {!revealed ? (
+          {!revealed && (
             <button
               onClick={handleSubmit}
               disabled={!selected}
@@ -257,13 +367,6 @@ export default function LearnMCQ() {
               }`}
             >
               Submit
-            </button>
-          ) : (
-            <button
-              onClick={handleNext}
-              className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-700"
-            >
-              Next
             </button>
           )}
         </div>
@@ -298,6 +401,19 @@ export default function LearnMCQ() {
           </div>
         )}
 
+        {revealed && gradeButtons.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-3">
+            {gradeButtons.map((btn) => (
+              <button
+                key={btn.grade}
+                onClick={() => handleGrade(btn.grade)}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700"
+              >
+                {btn.label} <span className="ml-2 text-sm text-emerald-200">({btn.intervalText})</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

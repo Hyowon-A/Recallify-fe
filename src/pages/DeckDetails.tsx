@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, Meta, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import DeckDeleteModal from "../components/DeckDeleteModal";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 type DeckType = "MCQ" | "FLASHCARD";
 
-type DeckMeta = { id: string; title: string; count: number; isPublic?: boolean; type: DeckType; isOwner: boolean };
-type ApiDeckMeta = { id: string | number; title: string; count?: number; isPublic?: boolean; type: DeckType; isOwner: boolean };
+type DeckMeta = { id: string; title: string; count: number; isPublic?: boolean; type: DeckType; isOwner: boolean; newC?: number, learn?: number; due?: number};
+type ApiDeckMeta = { id: string | number; title: string; count?: number; isPublic?: boolean; type: DeckType; isOwner: boolean; newC?: number, learn?: number; due?: number };
 
 type Option = { id: string; option: string; correct?: boolean; explanation?: string };
-type Question = { id: string; question: string; options: Option[]; explanation?: string };
+type Question = { id: string; question: string; options: Option[]; explanation?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 type ApiOption = { id?: string; option?: string; text?: string; correct?: boolean; explanation?: string };
-type ApiMcq = { id: string | number; question?: string; prompt?: string; options?: ApiOption[]; explanation?: string };
+type ApiMcq = { id: string | number; question?: string; prompt?: string; options?: ApiOption[]; explanation?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 
-type Flashcard = { id: string; front: string; back: string };
-type ApiFlashcard = { id: string | number; front?: string; back?: string };
+type Flashcard = { id: string; front: string; back: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
+type ApiFlashcard = { id: string | number; front?: string; back?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 
 const mapMeta = (d: ApiDeckMeta): DeckMeta => ({
   id: String(d.id),
@@ -24,6 +24,9 @@ const mapMeta = (d: ApiDeckMeta): DeckMeta => ({
   isPublic: Boolean(d.isPublic ?? false),
   type: d.type,
   isOwner: d.isOwner,
+  newC: d.newC,
+  learn: d.learn,
+  due: d.due,
 });
 
 const mapQuestion = (q: ApiMcq, idx: number): Question => ({
@@ -36,12 +39,20 @@ const mapQuestion = (q: ApiMcq, idx: number): Question => ({
     correct: !!o.correct,
     explanation: o.explanation ?? "",
   })),
+  interval_hours: q.interval_hours,
+  ef: q.ef,
+  repetitions: q.repetitions,
+  srsType: q.srsType,
 });
 
 const mapCard = (c: ApiFlashcard, idx: number): Flashcard => ({
   id: String(c.id ?? idx),
   front: c.front ?? "",
   back: c.back ?? "",
+  interval_hours: c.interval_hours,
+  ef: c.ef,
+  repetitions: c.repetitions,
+  srsType: c.srsType,
 });
 
 export default function DeckDetails() {
@@ -104,13 +115,34 @@ export default function DeckDetails() {
     return () => ctl.abort();
   }, [setId, meta, token]);
 
+  // Scores only for MCQ sets
+  useEffect(() => {
+    if (!setId || meta?.type !== "MCQ") return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/score/get/${setId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (alive) setScores(data || []);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [setId, meta?.type, token]);
+
   // Fetch content (MCQs or Flashcards) after we know meta.type
   useEffect(() => {
     if (!setId || !meta?.type) return;
     const ctl = new AbortController();
+    setLoading(true);
 
     async function loadContent() {
-      setLoading(true);
       setErr(null);
       try {
         if (meta?.type === "MCQ") {
@@ -145,27 +177,6 @@ export default function DeckDetails() {
     return () => ctl.abort();
   }, [setId, meta?.type, token]);
 
-  // Scores only for MCQ sets
-  useEffect(() => {
-    if (!setId || meta?.type !== "MCQ") return;
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch(`/api/score/get/${setId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (alive) setScores(data || []);
-      } catch {
-        /* ignore */
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [setId, meta?.type, token]);
-
   const startStudy = () => {
     if (!setId) return;
     if (meta?.type === "FLASHCARD") {
@@ -185,14 +196,34 @@ export default function DeckDetails() {
 
   const deleteDeck = () => setDeleteOpen(true);
 
-  // Loading skeleton
-  const contentMissing =
-    (meta?.type === "MCQ" && !questions) || (meta?.type === "FLASHCARD" && !cards);
-
-  if ((loading && contentMissing) || !meta) {
+  if (!meta) {
+    // Full page skeleton
     return (
       <div className="mx-auto max-w-[1100px] px-4 py-6">
-        <MetaHeader meta={meta ?? { id: setId ?? "", title: "Loading…", count: 0, type: "MCQ", isOwner: false}} />
+        {/* Fake header skeleton */}
+        <div className="mb-6">
+          <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+          <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mt-2" />
+        </div>
+  
+        {/* Fake score chart skeleton */}
+        <div className="rounded-xl bg-white p-6 shadow mb-6">
+          <div className="h-5 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-48 bg-gray-100 rounded animate-pulse" />
+        </div>
+  
+        {/* Fake questions skeleton */}
+        <QuestionsSkeleton />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[1100px] px-4 py-6">
+        <MetaHeader meta={meta}/>
+        {/* Fake questions skeleton */}
         <QuestionsSkeleton />
       </div>
     );
@@ -277,10 +308,21 @@ function MetaHeader({
           </Link>
         </div>
         <h1 className="text-2xl font-semibold">{meta.title}</h1>
-        <div className="mt-1 text-sm text-gray-600">
-          {meta.count} {unit}
-          {meta.count === 1 ? "" : "s"} ·{" "}
-          {meta.isPublic ? <span className="text-emerald-700">Public</span> : <span>Private</span>}
+        <div className="mt-1 text-sm text-gray-600 flex flex-wrap gap-2">
+            {meta.count} {unit}
+            {meta.count === 1 ? "" : "s"} ·{" "}
+            {meta.isPublic ? (
+              <span className="text-emerald-700">Public</span>
+            ) : (
+              <span>Private</span>
+            )}
+            {meta.isOwner && (
+              <>
+              <span className="text-blue-600"> · New {meta.newC} · </span>
+              <span className="text-yellow-600">Learning {meta.learn} · </span>
+              <span className="text-red-600">Due {meta.due}</span>
+              </>
+            )}
         </div>
       </div>
 

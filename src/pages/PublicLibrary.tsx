@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 
-type Deck = { id: string; title: string; count: number; isPublic: boolean, type: "MCQ" | "FLASHCARD", isOwner: boolean };
+type Deck = { id: string; title: string; count: number; isPublic: boolean, type: "MCQ" | "FLASHCARD", isOwner: boolean,
+              newC: number, learn: number, due: number };
 
 type ApiDeck = {
   id: string | number;
@@ -12,6 +13,9 @@ type ApiDeck = {
   isPublic?: boolean;
   type: "MCQ" | "FLASHCARD";
   isOwner: boolean;
+  newC: number;
+  learn: number;
+  due: number;
 };
 
 export default function PublicLibrary() {
@@ -26,7 +30,10 @@ export default function PublicLibrary() {
     count: Number(d.count ?? 0),
     isPublic: Boolean(d.isPublic),
     type: d.type,
-    isOwner: d.isOwner
+    isOwner: d.isOwner,
+    newC: d.newC,
+    learn: d.learn,
+    due: d.due,
   });
 
   useEffect(() => {

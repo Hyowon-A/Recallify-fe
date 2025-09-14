@@ -2,12 +2,72 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
 
-type Flashcard = { id: string; front: string; back: string };
-type ApiFlashcard = { id?: string | number; front?: string; back?: string };
+type Flashcard = { id: string; front: string; back: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
+type ApiFlashcard = { id?: string | number; front?: string; back?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 
 // map API → UI
 function mapCard(c: ApiFlashcard, i: number): Flashcard {
-  return { id: String(c.id ?? i), front: c.front ?? "", back: c.back ?? "" };
+  return { id: String(c.id ?? i), front: c.front ?? "", back: c.back ?? "" , interval_hours: c.interval_hours, ef: c.ef, repetitions: c.repetitions, srsType: c.srsType};
+}
+
+function estimateNextInterval(grade: number, ef: number, rep: number, interval: number): string {
+  let nextReps = rep;
+  let nextEf = ef;
+  let nextInterval = 0;
+
+  if (grade < 2) {
+    // Forgot
+    if (rep === 0) {
+      nextInterval = 1;
+    } else {
+      nextInterval = 24; // reset to 1 day
+    }
+    nextReps = 0;
+    nextEf = Math.max(1.3, ef - 0.2); // drop EF
+  } else {
+    // Remembered
+    nextReps += 1;
+
+    if (nextReps === 1) {
+      if (grade === 2) nextInterval = 12;
+      else if (grade === 3) nextInterval = 24;
+      else if (grade === 4) nextInterval = 48;
+    } else if (nextReps === 2) {
+      if (grade === 2) nextInterval = 72;
+      else if (grade === 3) nextInterval = 144;
+      else if (grade === 4) nextInterval = 288;
+    } else {
+      nextInterval = interval * nextEf;
+      if (grade === 2) {
+        nextInterval *= 0.8; // hard review skips EF
+      } else if (grade === 4) {
+        nextInterval *= 1.3; // easy bonus
+      }
+    }
+
+    // EF update (only if ≥ 3)
+    nextEf = ef + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
+    nextEf = Math.max(1.3, nextEf);
+  }
+
+  nextInterval = Math.min(nextInterval, 1440); // 60 days max
+  return formatInterval(nextInterval);
+}
+
+function formatInterval(hours: number): string {
+  if (hours < 1) {
+    return `${Math.round(hours * 60)}m`;
+  }
+  if (hours < 24) {
+    return `${hours.toFixed(1)}h`;
+  }
+
+  const days = hours / 24;
+  if (days < 30) {
+    return `${days.toFixed(1)}d`;
+  }
+
+  return `${(days / 30).toFixed(1)}mo`;
 }
 
 export default function LearnFlashcard() {
@@ -18,9 +78,15 @@ export default function LearnFlashcard() {
   const location = useLocation();
   const state = location.state as { cards?: Flashcard[]; deckTitle?: string } | undefined;
 
-  const [cards, setCards] = useState<Flashcard[] | null>(state?.cards ?? null);
-  const [deckTitle, setDeckTitle] = useState<string>(state?.deckTitle ?? "Flashcard Deck");
+  console.log(state?.cards);
 
+  const [cards, setCards] = useState<Flashcard[] | null>(
+    state?.cards ? filterLearnAndDue(state.cards) : null
+  );
+    const [deckTitle, setDeckTitle] = useState<string>(state?.deckTitle ?? "Flashcard Deck");
+
+
+  console.log(cards);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -57,7 +123,7 @@ export default function LearnFlashcard() {
         const arr: Flashcard[] = Array.isArray(data)
           ? data.map(mapCard)
           : (data.cards ?? []).map(mapCard);
-        setCards(arr);
+        setCards(filterLearnAndDue(arr));
         setDeckTitle(data.title ?? "Flashcard Deck");
       } catch (e: any) {
         if (e.name !== "AbortError") setErr(e.message || "Network error");
@@ -73,21 +139,34 @@ export default function LearnFlashcard() {
   // derived
   const total = cards?.length ?? 0;
   const card = cards?.[index];
+
+  const gradeButtons = useMemo(() => {
+    if (!card || !revealed) return [];
+  
+    return [1, 2, 3, 4].map((grade) => {
+      const label = ["Again", "Hard", "Good", "Easy"][grade-1] ?? `Grade ${grade}`;
+      const intervalText = estimateNextInterval(grade, card.ef, card.repetitions, card.interval_hours);
+      return { grade, label, intervalText };
+    });
+  }, [card, revealed]);
+  
   const progressPct = total > 0 ? Math.round((index / total) * 100) : 0;
 
   // keyboard: Space flip; 1 = knew; 2 = unsure; Enter = next if revealed
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!card) return;
-      if (e.key === " ") {
+      if (e.key === " " && !revealed) {
         e.preventDefault();
-        setRevealed((r) => !r);
+        setRevealed(true);
       } else if (e.key === "1" && revealed) {
-        handleKnew();
+        handleGrade(1);
       } else if (e.key === "2" && revealed) {
-        handleUnsure();
-      } else if (e.key === "Enter" && revealed) {
-        handleNext();
+        handleGrade(2);
+      } else if (e.key === "3" && revealed) {
+        handleGrade(3);
+      } else if (e.key === "4" && revealed) {
+        handleGrade(4);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -95,7 +174,7 @@ export default function LearnFlashcard() {
   }, [card, revealed]);
 
   function handleFlip() {
-    setRevealed((r) => !r);
+    if (!revealed) setRevealed(true);
   }
 
   function handleNext() {
@@ -108,12 +187,26 @@ export default function LearnFlashcard() {
     setRevealed(false);
   }
 
-  function handleKnew() {
-    setKnown((k) => k + 1);
-    handleNext();
-  }
+  function filterLearnAndDue(cards: Flashcard[]): Flashcard[] {
+    return cards.filter(c => c.srsType === "newC" || c.srsType === "learn" || c.srsType === "due");
+  }  
 
-  function handleUnsure() {
+  async function handleGrade(grade: number) {
+    if (!card) return;
+
+    let res = await fetch(`/api/flashcard/SRS/update/${card.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        grade,
+        ef: card.ef,
+        interval_hours: card.interval_hours,
+        repetitions: card.repetitions,
+      }),
+    })
     handleNext();
   }
 
@@ -174,11 +267,10 @@ export default function LearnFlashcard() {
         <h2 className="mb-4 text-xl md:text-2xl font-semibold">Card {index + 1}</h2>
 
         {/* card body */}
-        <div className="rounded-2xl bg-white border p-6 md:p-10 min-h-[160px]">
-          {!revealed ? (
-            <div className="text-lg whitespace-pre-wrap">{card.front}</div>
-          ) : (
-            <div className="text-lg whitespace-pre-wrap">{card.back}</div>
+        <div className="rounded-2xl bg-white border p-6 md:p-10 min-h-[160px] space-y-4">
+          <div className="text-lg font-semibold whitespace-pre-wrap">{card.front}</div>
+          {revealed && (
+            <div className="text-lg text-gray-700 whitespace-pre-wrap border-t pt-4">{card.back}</div>
           )}
         </div>
 
@@ -193,20 +285,16 @@ export default function LearnFlashcard() {
             </button>
           ) : (
             <>
-              <button
-                onClick={handleUnsure}
-                className="rounded-lg border border-gray-300 bg-white px-5 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-                title="2"
-              >
-                Unsure (2)
-              </button>
-              <button
-                onClick={handleKnew}
-                className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-700"
-                title="1"
-              >
-                I knew it (1)
-              </button>
+              {gradeButtons.map((btn) => (
+                <button
+                  key={btn.grade}
+                  onClick={() => handleGrade(btn.grade)}
+                  className="rounded-lg bg-gray-100 hover:bg-gray-200 px-4 py-2 border text-sm"
+                  title={`Grade ${btn.grade}`}
+                >
+                  {btn.label} <span className="text-gray-500">({btn.intervalText})</span>
+                </button>
+              ))}
             </>
           )}
         </div>

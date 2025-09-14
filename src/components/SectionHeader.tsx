@@ -7,7 +7,7 @@ export default function SectionHeader({
   }) {
     return (
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h2 className="text-l font-semibold">{title}</h2>
         <button
           onClick={onAdd}
           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"

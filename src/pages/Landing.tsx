@@ -87,13 +87,6 @@ export default function Landing({ onGetStarted }: Props) {
           ))}
         </ol>
       </section>
-
-      <footer className="border-t bg-white/70">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-8 text-sm text-gray-500">
-          <span>© {new Date().getFullYear()} Recallify</span>
-          <span>Study smarter.</span>
-        </div>
-      </footer>
     </>
   );
 }
