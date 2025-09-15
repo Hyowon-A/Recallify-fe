@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 export default function ProfileModal({
   open,
@@ -112,7 +113,7 @@ export default function ProfileModal({
       return;
     }    
   
-    const res = await fetchWithAuth("/api/user/edit", {
+    const res = await fetchWithAuth(`${API_BASE_URL}/user/edit`, {
       method: "PUT",
       body: JSON.stringify(body),        
     });

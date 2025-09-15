@@ -132,7 +132,7 @@ export default function CreateMCQs() {
           <p className="text-sm text-gray-500">or</p>
           <label className="mt-3 inline-block cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700">
             Choose file
-            <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={onSelectFile} />
+            <input type="file" accept=".pdf,application/pdf" className="hidden" onChange={onSelectFile} />
           </label>
           {file && <p className="mt-3 text-sm text-gray-600">Selected: {file.name}</p>}
         </div>
