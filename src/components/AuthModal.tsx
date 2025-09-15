@@ -36,7 +36,7 @@ export default function AuthModal({
   const [confirmPwError, setConfirmPwError] = useState("");
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)\S{8,}$/;
 
   // Clear field-specific errors as user types
   const onEmailChange = (v: string) => {
