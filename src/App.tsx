@@ -14,6 +14,7 @@ import EditMCQs from "./pages/EditMCQs";
 import { isTokenExpired } from "./jwt";
 import EditFlashcards from "./pages/EditFlashcards";
 import LearnFlashcard from "./pages/LearnFlashcard";
+import { API_BASE_URL } from "./config";
 
 type User = { name: string; email: string } | null;
 
@@ -62,7 +63,7 @@ export default function App() {
 
   // logout (used by ProfileModal)
   const handleLogout = async () => {
-    await fetch("/api/user/logout", {
+    await fetch(`${API_BASE_URL}/user/logout`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
