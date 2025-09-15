@@ -51,13 +51,13 @@ export default function Landing({ onGetStarted }: Props) {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features
       <section className="bg-white/70 border-t">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-14 md:grid-cols-4">
           {[
-            { title: "AI MCQ Generator", body: "Paste notes → get multiple‑choice questions instantly." },
+            { title: "AI Generator", body: "Paste notes → get MCQs and Flashcards instantly." },
             { title: "Smart Review", body: "Spaced repetition to beat forgetting." },
-            { title: "Deck & Quiz Manager", body: "Organize subjects and sets fast." },
+            { title: "Set & Quiz Manager", body: "Organize subjects and sets fast." },
             { title: "Progress Tracking", body: "See accuracy and mastery grow." },
           ].map((f) => (
             <div key={f.title} className="rounded-2xl border bg-white p-6 shadow-sm">
@@ -66,16 +66,16 @@ export default function Landing({ onGetStarted }: Props) {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-4 py-16">
         <ol className="grid grid-cols-1 gap-6 md:grid-cols-4">
           {[
-            ["Create a set", "Add topics or paste notes."],
-            ["Generate MCQs", "AI creates questions & choices."],
-            ["Practice & Review", "Instant feedback + hints."],
-            ["Track mastery", "Scores and accuracy trends."],
+              ["Generate with AI", "Paste your notes and study material"],
+              ["Smart Question Creation", "AI generates MCQs and flashcards"],
+              ["Practice with Spaced Repetition", "Review smarter, not harder"],
+              ["Track Mastery", "Progress, scores, and review stats"]
           ].map(([t, b], i) => (
             <li key={i} className="rounded-2xl border bg-white p-6 shadow-sm">
               <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">

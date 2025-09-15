@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
+import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 type Flashcard = { id: string; front: string; back: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 type ApiFlashcard = { id?: string | number; front?: string; back?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
@@ -72,7 +74,6 @@ function formatInterval(hours: number): string {
 
 export default function LearnFlashcard() {
   const { setId } = useParams<{ setId: string }>();
-  const token = localStorage.getItem("token") || "";
 
   const location = useLocation();
   const state = location.state as { cards?: Flashcard[]; deckTitle?: string } | undefined;
@@ -83,7 +84,6 @@ export default function LearnFlashcard() {
     const [deckTitle, setDeckTitle] = useState<string>(state?.deckTitle ?? "Flashcard Deck");
 
 
-  console.log(cards);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -108,8 +108,7 @@ export default function LearnFlashcard() {
         setIndex(0);
         setRevealed(false);
 
-        const res = await fetch(`/api/flashcard/get/${setId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetchWithAuth(`${API_BASE_URL}/flashcard/get/${setId}`, {
           signal: ctl.signal,
         });
         if (!res.ok) throw new Error(await res.text());
@@ -191,12 +190,8 @@ export default function LearnFlashcard() {
 
     handleNext();
 
-    await fetch(`/api/flashcard/SRS/update/${card.id}`, {
+    await fetchWithAuth(`${API_BASE_URL}/flashcard/SRS/update/${card.id}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({
         grade,
         ef: card.ef,

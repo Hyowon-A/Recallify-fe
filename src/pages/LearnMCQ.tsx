@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
+import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 type Option = { id: string; option: string; correct?: boolean; explanation?: string,};
 type Question = { id: string; question: string; options: Option[]; explanation?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
@@ -92,8 +94,6 @@ export default function LearnMCQ() {
   const { setId } = useParams<{ setId: string }>();
   const nav = useNavigate();
 
-  const token = localStorage.getItem("token") || "";
-
   const location = useLocation();
   const state = location.state as { questions: Question[]; deckTitle: string } | undefined;
   const [questions, setQuestions] = useState<Question[] | null>(
@@ -129,9 +129,8 @@ export default function LearnMCQ() {
       setScore(0);
 
       try {
-        const res = await fetch(`/api/mcq/get/${setId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-            signal: ctl.signal,
+        const res = await fetchWithAuth(`${API_BASE_URL}/mcq/get/${setId}`, {
+          signal: ctl.signal,
         })
 
         if (!res.ok) {
@@ -197,9 +196,6 @@ export default function LearnMCQ() {
         } else {
           handleGrade(Number(e.key));
         }
-      } else if (e.key === "Enter") {
-        if (!revealed && selected) handleSubmit();
-        else if (revealed) handleNext();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -218,12 +214,8 @@ export default function LearnMCQ() {
     if (index + 1 >= questions.length) {
       setShowResults(true);
       try {
-        const res = await fetch("/api/score/store", {
+        const res = await fetchWithAuth(`${API_BASE_URL}/score/store`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify({
             setId: setId,
             score: score,
@@ -248,14 +240,10 @@ export default function LearnMCQ() {
 
     handleNext();
 
-    await fetch(`/api/mcq/SRS/update/${q.id}`, {
+    await fetchWithAuth(`${API_BASE_URL}/mcq/SRS/update/${q.id}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({
-        grade,
+        grade: grade,
         ef: q.ef,
         interval_hours: q.interval_hours,
         repetitions: q.repetitions,

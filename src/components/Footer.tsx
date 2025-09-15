@@ -4,13 +4,13 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between max-w-[1200px] mx-auto px-4">
           <p>© {new Date().getFullYear()} Recallify. All rights reserved.</p>
           <div className="flex gap-4 mt-2 md:mt-0">
-            <a href="https://github.com/yourrepo" target="_blank" rel="noreferrer" className="hover:text-emerald-600">
+            <a href="https://github.com/Hyowon-A/Recallify#" target="_blank" rel="noreferrer" className="hover:text-emerald-600">
               GitHub
             </a>
-            <a href="/about" className="hover:text-emerald-600">
+            <a href="" className="hover:text-emerald-600">
               About
             </a>
-            <a href="/privacy" className="hover:text-emerald-600">
+            <a href="" className="hover:text-emerald-600">
               Privacy
             </a>
           </div>

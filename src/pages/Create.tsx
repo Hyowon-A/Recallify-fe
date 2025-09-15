@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 export default function CreateMCQs() {
   const loc = useLocation() as { state?: { type?: "MCQ" | "FLASHCARD" } };
@@ -15,8 +17,6 @@ export default function CreateMCQs() {
 
   const [loading, setLoading] = useState(false);
   const [isPublic, setIsPublic] = useState(false)
-
-  const token = localStorage.getItem("token") ?? "";
 
   const navigate = useNavigate();
 
@@ -39,12 +39,8 @@ export default function CreateMCQs() {
     setLoading(true);
 
     // 1) Create the set
-    const createRes = await fetch("/api/set/create", {
+    const createRes = await fetchWithAuth(`${API_BASE_URL}/set/create`, {
         method: "POST",
-        headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
           title: deckTitle,
           isPublic: isPublic,
@@ -67,7 +63,7 @@ export default function CreateMCQs() {
     if (paste && paste.trim()) form.append("text", paste.trim());
 
     const genUrl =
-      deckType === "MCQ" ? "/api/mcq/generate-from-pdf" : "/api/flashcard/generate-from-pdf";  
+      deckType === "MCQ" ? `${API_BASE_URL}/mcq/generate-from-pdf` : `${API_BASE_URL}/flashcard/generate-from-pdf`;  
 
     const genRes = await fetch(genUrl, {
       method: "POST",

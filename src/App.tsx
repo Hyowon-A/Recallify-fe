@@ -61,8 +61,16 @@ export default function App() {
   };
 
   // logout (used by ProfileModal)
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch("/api/user/logout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });    
+
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("email");
     localStorage.removeItem("name");
     setUser(null);

@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import DeckDeleteModal from "../components/DeckDeleteModal";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 type DeckType = "MCQ" | "FLASHCARD";
 
@@ -80,14 +82,12 @@ export default function DeckDetails() {
     if (!setId) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem("token") ?? "";
-      await fetch(`/api/set/delete/${setId}`, {
+      await fetchWithAuth(`${API_BASE_URL}/set/delete/${setId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       nav("/dashboard");
     } catch (e) {
-      console.error(e);
+      
     } finally {
       setDeleting(false);
     }
@@ -100,8 +100,7 @@ export default function DeckDetails() {
     async function loadMetaIfNeeded() {
       if (meta) return;
       try {
-        const res = await fetch(`/api/set/meta/${setId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetchWithAuth(`${API_BASE_URL}/set/meta/${setId}`, {
           signal: ctl.signal,
         });
         if (!res.ok) throw new Error(await res.text());
@@ -121,8 +120,7 @@ export default function DeckDetails() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/score/get/${setId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetchWithAuth(`${API_BASE_URL}/score/get/${setId}`, {
         });
         if (!res.ok) return;
         const data = await res.json();
@@ -146,8 +144,7 @@ export default function DeckDetails() {
       setErr(null);
       try {
         if (meta?.type === "MCQ") {
-          const res = await fetch(`/api/mcq/get/${setId}`, {
-            headers: { Authorization: `Bearer ${token}` },
+          const res = await fetchWithAuth(`${API_BASE_URL}/mcq/get/${setId}`, {
             signal: ctl.signal,
           });
           if (!res.ok) throw new Error(await res.text());
@@ -155,9 +152,9 @@ export default function DeckDetails() {
           const mcqs = Array.isArray(data) ? data : (data.mcqs ?? []);
           setQuestions(mcqs.map(mapQuestion));
           setCards(null);
+          setLoading(false);
         } else {
-          const res = await fetch(`/api/flashcard/get/${setId}`, {
-            headers: { Authorization: `Bearer ${token}` },
+          const res = await fetchWithAuth(`${API_BASE_URL}/flashcard/get/${setId}`, {
             signal: ctl.signal,
           });
           if (!res.ok) throw new Error(await res.text());
@@ -165,11 +162,10 @@ export default function DeckDetails() {
           const arr = Array.isArray(data) ? data : (data.cards ?? []);
           setCards(arr.map(mapCard));
           setQuestions(null);
+          setLoading(false);
         }
       } catch (e: any) {
         if (e.name !== "AbortError") setErr(e.message || "Failed to load content");
-      } finally {
-        setLoading(false);
       }
     }
 
@@ -197,10 +193,8 @@ export default function DeckDetails() {
   const deleteDeck = () => setDeleteOpen(true);
 
   async function handleCopy() {
-    const token = localStorage.getItem("token") || "";
-    const res = await fetch(`/api/set/copy/${setId}`, {
+    const res = await fetchWithAuth(`${API_BASE_URL}/set/copy/${setId}`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     });
   
     if (res.ok) {

@@ -1,6 +1,8 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 type Question = {
   id: string;
@@ -21,8 +23,6 @@ export default function EditMCQs() {
 
   const [saving, setSaving] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-
-  const token = localStorage.getItem("token");
 
   const nav = useNavigate();
 
@@ -45,17 +45,13 @@ export default function EditMCQs() {
         body.deletedIds = Array.from(deletedIds);
       }
 
-      await fetch("/api/set/edit", {
+      await fetchWithAuth(`${API_BASE_URL}/set/edit`, {
         method: "POST",
-        headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(body),        
       });
       nav(`/sets/${state.meta.id}`);
     } catch (e) {
-      console.error(e);
+
     } finally {
       setSaving(false);
     }

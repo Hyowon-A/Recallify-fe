@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchWithAuth } from "../auth";
 
 export default function ProfileModal({
   open,
@@ -28,8 +29,6 @@ export default function ProfileModal({
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-
-  const token = localStorage.getItem("token");
 
   // Clear field-specific errors as user types
   const onNameChange = (v: string) => {
@@ -113,12 +112,8 @@ export default function ProfileModal({
       return;
     }    
   
-    const res = await fetch("/api/user/edit", {
+    const res = await fetchWithAuth("/api/user/edit", {
       method: "PUT",
-      headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(body),        
     });
 

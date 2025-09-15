@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
+import { fetchWithAuth } from "../auth";
+import { API_BASE_URL } from "../config";
 
 type Deck = { id: string; title: string; count: number; isPublic: boolean, type: "MCQ" | "FLASHCARD", isOwner: boolean,
               newC: number, learn: number, due: number };
@@ -22,6 +24,8 @@ export default function PublicLibrary() {
   const [flash, setFlash] = useState<Deck[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   const mapDeck = (d: ApiDeck): Deck => ({
     id: String(d.id),
     title: d.title,
@@ -35,16 +39,15 @@ export default function PublicLibrary() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || "";
     const ctl = new AbortController();
 
     async function fetchAll() {
       try {
         setError(null);
         setMcq(null); setFlash(null); // show skeletons
+        setIsLoading(true);
 
-        const res = await fetch("/api/set/public", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetchWithAuth(`${API_BASE_URL}/set/public`, {
           signal: ctl.signal,
         });
         if (!res.ok) throw new Error(await res.text());
@@ -61,6 +64,7 @@ export default function PublicLibrary() {
 
         setMcq(mcqs);
         setFlash(flashes);
+        setIsLoading(false);
       } catch (e: any) {
         if (e.name !== "AbortError") setError(e.message || "Failed to load decks");
         setMcq([]); setFlash([]);
@@ -73,41 +77,41 @@ export default function PublicLibrary() {
 
   return (
     <>
-      {/* MCQ sets */}
-      <section className="mb-14">
-        <SectionHeader title="MCQ sets" />
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {mcq === null ? (
-          <SkeletonGrid />
-        ) : mcq.length === 0 ? (
-          <EmptyState message="No MCQ sets yet. Click Add to create one." />
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-            {mcq.map((d) => (
-              <DeckCard key={d.id} deck={d} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Flashcard sets */}
-      <section>
-        <SectionHeader title="Flashcard sets"/>
-        {flash === null ? (
-          <SkeletonGrid />
-        ) : flash.length === 0 ? (
-          <EmptyState message="No flashcard sets yet. Click Add to create one." />
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-            {flash.map((d) => (
-              <DeckCard key={d.id} deck={d} />
-            ))}
-          </div>
-        )}
+       {/* MCQ sets */}
+          <section className="mb-14">
+            <SectionHeader title="MCQ sets"/>
+            {isLoading ? (
+              <SkeletonGrid />
+            ) : error ? (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </div>
+            ) : mcq?.length === 0 ? (
+              <EmptyState message="No MCQ sets yet. Click Add to create one." />
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                {mcq?.map((d) => (
+                  <DeckCard key={d.id} deck={d} />
+                ))}
+              </div>
+            )}
+    
+          </section>
+    
+          {/* Flashcard sets */}
+          <section>
+            <SectionHeader title="Flashcard sets"/>
+            {isLoading ? (
+              <SkeletonGrid />
+            ) : flash?.length === 0 ? (
+              <EmptyState message="No flashcard sets yet. Click Add to create one." />
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                {flash?.map((d) => (
+                  <DeckCard key={d.id} deck={d} />
+                ))}
+              </div>
+            )}
       </section>
     </>
   );

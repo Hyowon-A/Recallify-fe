@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../config";
 
 type Mode = "login" | "signup";
 
@@ -67,7 +68,7 @@ export default function AuthModal({
     setPwError("");
     setFormError("");
   }, [mode]);
-
+  
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
@@ -94,7 +95,7 @@ export default function AuthModal({
 
     if (!valid) return;
 
-    const endpoint = mode === "login" ? "/api/user/login" : "/api/user/register";
+    const endpoint = mode === "login" ? `${API_BASE_URL}/user/login` : `${API_BASE_URL}/user/register`;
     const payload =
       mode === "login" ? { email: tEmail, password: tPw } : { name: tName, email: tEmail, password: tPw };
 
@@ -131,15 +132,14 @@ export default function AuthModal({
       }
 
       // success
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
+      if (data?.accessToken) localStorage.setItem("token", data.accessToken);
+      if (data?.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+
       if (data?.email) localStorage.setItem("email", data.email);
       if (data?.name) localStorage.setItem("name", data.name);
 
       onSuccess({ email: data.email, name: data.name });
     } catch (err) {
-      console.error("Request failed", err);
       setFormError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -161,7 +161,7 @@ export default function AuthModal({
       setForgotError("");
       setForgotStatus(null);
 
-      const res = await fetch("/api/user/sendResetCode", {
+      const res = await fetch(`${API_BASE_URL}/user/sendResetCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: tEmail,
@@ -182,7 +182,6 @@ export default function AuthModal({
 
       setForgotStatus("sent");
     } catch (err) {
-      console.error("Forgot password failed", err);
       setForgotError("Something went wrong. Please try again.");
     } finally {
       setForgotLoading(false);
@@ -201,7 +200,7 @@ export default function AuthModal({
     try {
       setForgotLoading(true);
       setForgotError("");
-      const res = await fetch("/api/user/verifyResetCode", {
+      const res = await fetch(`${API_BASE_URL}/user/verifyResetCode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: forgotEmail.trim(), code: resetCode }),
@@ -244,7 +243,7 @@ export default function AuthModal({
       setConfirmPwError("");
       setForgotError("");
   
-      const res = await fetch("/api/user/resetPassword", {
+      const res = await fetch(`${API_BASE_URL}/user/resetPassword`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
