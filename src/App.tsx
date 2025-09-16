@@ -1,167 +1,130 @@
 import { useEffect, useState, type JSX } from "react";
-import { Routes, Route, Navigate} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./pages/_Layout";
 import Landing from "./pages/Landing";
-import AuthModal from "./components/AuthModal";
-import ProfileModal from "./components/ProfileModal";
 import Dashboard from "./pages/Dashboard";
 import PublicLibrary from "./pages/PublicLibrary";
 import LearnMCQ from "./pages/LearnMCQ";
-import _Layout from "./pages/_Layout"
-import Create from "./pages/Create";
-import Layout from "./pages/_Layout";
+import LearnFlashcard from "./pages/LearnFlashcard";
 import DeckDetails from "./pages/DeckDetails";
 import EditMCQs from "./pages/EditMCQs";
-import { isTokenExpired } from "./jwt";
 import EditFlashcards from "./pages/EditFlashcards";
-import LearnFlashcard from "./pages/LearnFlashcard";
+import Create from "./pages/Create";
+import AuthModal from "./components/AuthModal";
+import ProfileModal from "./components/ProfileModal";
+import { getUserFromToken, isTokenExpired } from "./jwt";
+import { refreshIfNeeded, fetchWithAuth } from "./auth";
 import { API_BASE_URL } from "./config";
 
 type User = { name: string; email: string } | null;
 
-function ProtectedRoute({ user, children }: { user: User; children: JSX.Element }) {
-  if (!user) return <Navigate to="/" replace />;
-  return children;
-}
-function PublicOnlyRoute({ user, children }: { user: User; children: JSX.Element }) {
-  if (user) return <Navigate to="/dashboard" replace />;
-  return children;
-}
-
 export default function App() {
   const [user, setUser] = useState<User>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // hydrate user once on load
+  // Hydrate user on load
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const email = localStorage.getItem("email");
-    const name  = localStorage.getItem("name");
-    
-    if (token && email && name && !isTokenExpired(token)) {
-      setUser({ name, email });
-    } else {
-      localStorage.removeItem("token");
-      localStorage.removeItem("email");
-      localStorage.removeItem("name");
-      setUser(null);
-    }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const at = (await refreshIfNeeded()) ?? localStorage.getItem("token");
+        if (cancelled) return;
+
+        if (at && !isTokenExpired(at)) {
+          const u = getUserFromToken(at);
+          if (u) {
+            setUser(u);
+            localStorage.setItem("email", u.email);
+            if (u.name) localStorage.setItem("name", u.name);
+            return;
+          }
+        }
+
+        // not logged in
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("email");
+        localStorage.removeItem("name");
+        setUser(null);
+      } finally {
+        if (!cancelled) setAuthReady(true); // unblock routing
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, []);
 
-  // helpers to open modals from Layout
+  // Openers
   const openLogin  = () => { setAuthMode("login");  setAuthOpen(true); };
   const openSignup = () => { setAuthMode("signup"); setAuthOpen(true); };
   const openProfile = () => setProfileOpen(true);
 
-  // handle auth success from modal
+  // Auth success
   const handleAuthSuccess = ({ name, email }: { name: string; email: string }) => {
-    // token/email/name should already be in localStorage (set in AuthModal)
-    setUser({ name, email });
+    const u  = { name: name, email: email };
+    setUser(u);
+    localStorage.setItem("email", u.email);
+    localStorage.setItem("name", u.name);
     setAuthOpen(false);
   };
 
-  // logout (used by ProfileModal)
+  // Logout
   const handleLogout = async () => {
-    await fetch(`${API_BASE_URL}/user/logout`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      }
-    });    
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("email");
-    localStorage.removeItem("name");
-    setUser(null);
-    setProfileOpen(false);
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/user/logout`, { method: "POST" });
+    } catch {} finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("email");
+      localStorage.removeItem("name");
+      setUser(null);
+      setProfileOpen(false);
+    }
   };
+
+  // Small helpers for protected pages
+  const Protected = ({ children }: { children: JSX.Element }) =>
+    !authReady ? <div /> : user ? children : <Navigate to="/" replace />;
 
   return (
     <>
-      <Layout
-        user={user}
-        onOpenLogin={openLogin}
-        onOpenSignup={openSignup}
-        onOpenProfile={openProfile}
-      >
+      <Layout user={user} onOpenLogin={openLogin} onOpenSignup={openSignup} onOpenProfile={openProfile}>
         <Routes>
           <Route
             path="/"
             element={
-              <PublicOnlyRoute user={user}>
+              !authReady ? (
                 <Landing onGetStarted={openSignup} />
-              </PublicOnlyRoute>
+              ) : user ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Landing onGetStarted={openSignup} />
+              )
             }
           />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute user={user}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/library"
-            element={
-              <ProtectedRoute user={user}>
-                <PublicLibrary />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/MCQ/:setId"
-            element={
-              <ProtectedRoute user={user}>
-                <LearnMCQ />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/Flashcard/:setId"
-            element={
-              <ProtectedRoute user={user}>
-                <LearnFlashcard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sets/:setId"
-            element={
-              <ProtectedRoute user={user}>
-                <DeckDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sets/:setId/MCQ/edit"
-            element={
-              <ProtectedRoute user={user}>
-                <EditMCQs  />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sets/:setId/Flashcard/edit"
-            element={
-              <ProtectedRoute user={user}>
-                <EditFlashcards  />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/create" element={<Create />} />
+
+          <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+          <Route path="/library" element={<Protected><PublicLibrary /></Protected>} />
+          <Route path="/learn/MCQ/:setId" element={<Protected><LearnMCQ /></Protected>} />
+          <Route path="/learn/Flashcard/:setId" element={<Protected><LearnFlashcard /></Protected>} />
+          <Route path="/sets/:setId" element={<Protected><DeckDetails /></Protected>} />
+          <Route path="/sets/:setId/MCQ/edit" element={<Protected><EditMCQs /></Protected>} />
+          <Route path="/sets/:setId/Flashcard/edit" element={<Protected><EditFlashcards /></Protected>} />
+          <Route path="/create" element={<Protected><Create /></Protected>} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
 
-      {/* mount modals ONCE */}
       {authOpen && (
         <AuthModal
           mode={authMode}
           onClose={() => setAuthOpen(false)}
-          onSwitch={(m) => setAuthMode(m)}
+          onSwitch={setAuthMode}
           onSuccess={handleAuthSuccess}
         />
       )}

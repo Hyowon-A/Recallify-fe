@@ -45,7 +45,7 @@ export default function Layout({
                 onClick={onOpenProfile}
                 className="grid h-9 w-9 place-items-center rounded-full bg-white text-emerald-600 font-bold border shadow-sm"
               >
-                {user.name?.[0].toUpperCase() ?? "U"}
+                {user.name?.[0]?.toUpperCase() ?? "U"}
               </button>
             </div>
           ) : (
