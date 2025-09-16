@@ -211,6 +211,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    lng: "en",  // force English at startup
     fallbackLng: "en",
     ns: ["common"],
     defaultNS: "common",
