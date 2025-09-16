@@ -5,6 +5,7 @@ import DeckDeleteModal from "../components/DeckDeleteModal";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation} from "react-i18next";
 
 type DeckType = "MCQ" | "FLASHCARD";
 
@@ -77,6 +78,8 @@ export default function DeckDetails() {
 
   const token = localStorage.getItem("token") ?? "";
   const [scores, setScores] = useState<{ score: number; takenAt: string }[]>([]); // MCQ only
+
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     if (!setId) return;
@@ -260,7 +263,7 @@ export default function DeckDetails() {
       {/* Score chart only for MCQ */}
       {meta.type === "MCQ" && (
         <div className="rounded-xl bg-white p-6 shadow">
-          <h2 className="font-semibold text-lg mb-4">Score Progress (Last 5 Attempts)</h2>
+          <h2 className="font-semibold text-lg mb-4">{(t("set.score"))}</h2>
           {scores.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
@@ -278,7 +281,7 @@ export default function DeckDetails() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-sm text-gray-500">No attempts yet. Try this quiz to see progress here.</div>
+            <div className="text-sm text-gray-500">{(t("set.noAttempt"))}</div>
           )}
         </div>
       )}
@@ -310,30 +313,34 @@ function MetaHeader({
   onDelete?: () => void;
   onCopy?: () => void;
 }) {
-  const unit = meta.type === "FLASHCARD" ? "card" : "question";
-  const startLabel = meta.type === "FLASHCARD" ? "Start review" : "Start quiz";
+  const { i18n, t } = useTranslation();
+  const isEnglish = i18n.language.startsWith("en");
+
+  const unit = meta.type === "FLASHCARD" ? (t("set.unit.flashcard")) : (t("set.unit.mcq"));
+  const startLabel = meta.type === "FLASHCARD" ? (t("set.learn.flashcard")) : (t("set.learn.mcq"));
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
       <div>
         <div className="mb-1">
           <Link to="/dashboard" className="text-sm text-emerald-700 hover:underline">
-            ← Back
+            {(t("set.backButton"))}
           </Link>
         </div>
         <h1 className="text-2xl font-semibold">{meta.title}</h1>
         <div className="mt-1 text-sm text-gray-600 flex flex-wrap gap-2">
-            {meta.count} {unit}
-            {meta.count === 1 ? "" : "s"} ·{" "}
+        {!isEnglish
+          ? `${meta.count}${unit}`
+          : `${meta.count} ${unit}${meta.count !== 1 ? "s" : ""}`}
             {meta.isPublic ? (
-              <span className="text-emerald-700">Public</span>
+              <span className="text-emerald-700">{(t("set.visibility.public"))}</span>
             ) : (
-              <span>Private</span>
+              <span>{(t("set.visibility.private"))}</span>
             )}
             {meta.isOwner && (
               <>
-              <span className="text-blue-600"> · New {meta.newC} · </span>
-              <span className="text-yellow-600">Learning {meta.learn} · </span>
-              <span className="text-red-600">Due {meta.due}</span>
+              <span className="text-blue-600"> · {(t("set.status.new"))} {meta.newC} · </span>
+              <span className="text-yellow-600">{(t("set.status.learn"))} {meta.learn} · </span>
+              <span className="text-red-600">{(t("set.status.due"))} {meta.due}</span>
               </>
             )}
         </div>
@@ -342,7 +349,7 @@ function MetaHeader({
       <div className="flex gap-2">
         {onEdit && meta.isOwner && (
           <button onClick={onEdit} className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
-            Edit
+            {(t("set.edit"))}
           </button>
         )}
         {onDelete && meta.isOwner && (
@@ -363,7 +370,7 @@ function MetaHeader({
           onClick={onCopy}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
         >
-          Save to My Dashboard
+          {(t("set.copy"))}
         </button>
         )}
       </div>
@@ -372,6 +379,7 @@ function MetaHeader({
 }
 
 function QuestionsPreview({ questions }: { questions: Question[] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 mt-5">
       {questions.map((q, idx) => (
@@ -395,7 +403,7 @@ function QuestionsPreview({ questions }: { questions: Question[] }) {
 
           {(q.explanation || q.options.some((o) => o.explanation)) && (
             <details className="mt-3">
-              <summary className="cursor-pointer text-sm text-gray-600">Explanations</summary>
+              <summary className="cursor-pointer text-sm text-gray-600">{(t("set.explanation"))}</summary>
               <div className="mt-2 space-y-2 text-sm">
                 {q.explanation && (
                   <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-emerald-800">
@@ -428,18 +436,19 @@ function QuestionsPreview({ questions }: { questions: Question[] }) {
 }
 
 function FlashcardsPreview({ cards }: { cards: Flashcard[] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 mt-5">
       {cards.map((c, idx) => (
         <div key={c.id} className="rounded-xl border bg-white p-5">
-          <div className="mb-2 text-sm text-gray-500">Card {idx + 1}</div>
+          <div className="mb-2 text-sm text-gray-500">{(t("set.card"))} {idx + 1}</div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border bg-gray-50 p-3">
-              <div className="text-xs uppercase text-gray-500 mb-1">Front</div>
+              <div className="text-xs uppercase text-gray-500 mb-1">{(t("set.front"))} </div>
               <div className="text-sm whitespace-pre-wrap">{c.front}</div>
             </div>
             <div className="rounded-lg border bg-gray-50 p-3">
-              <div className="text-xs uppercase text-gray-500 mb-1">Back</div>
+              <div className="text-xs uppercase text-gray-500 mb-1">{(t("set.back"))} </div>
               <div className="text-sm whitespace-pre-wrap">{c.back}</div>
             </div>
           </div>

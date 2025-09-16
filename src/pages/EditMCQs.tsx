@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation } from "react-i18next";
 
 type Question = {
   id: string;
@@ -25,6 +26,8 @@ export default function EditMCQs() {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   const nav = useNavigate();
+
+  const { t } = useTranslation();
 
   async function handleSave() {
     setSaving(true);
@@ -62,9 +65,9 @@ export default function EditMCQs() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-6">
       <Link to={`/sets/${state.meta.id}`} className="text-sm text-emerald-700 hover:underline">
-            ← Back
+            {(t("set.backButton"))}
       </Link>
-      <h1 className="text-2xl font-semibold mb-4">Edit {title}</h1>
+      <h1 className="text-2xl font-semibold mb-4">{(t("set.edit"))}: {title}</h1>
 
       <div className="mb-4 flex items-center justify-between gap-3">
         {/* Left side: title input + public/private toggle */}
@@ -74,24 +77,24 @@ export default function EditMCQs() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <div className="inline-flex rounded-full bg-gray-100 p-1">
-            <button
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                isPublic ? "bg-white shadow" : "text-gray-600"
-              }`}
-              onClick={() => setIsPublic(true)}
-            >
-              Public
-            </button>
-            <button
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                !isPublic ? "bg-white shadow" : "text-gray-600"
-              }`}
-              onClick={() => setIsPublic(false)}
-            >
-              Private
-            </button>
-          </div>
+        </div>
+        <div className="inline-flex rounded-full bg-gray-100 p-1">
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              isPublic ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setIsPublic(true)}
+          >
+            {(t("set.visibility.public"))}
+          </button>
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              !isPublic ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setIsPublic(false)}
+          >
+            {(t("set.visibility.private"))}
+          </button>
         </div>
 
         {/* Right side: Save button */}
@@ -102,7 +105,7 @@ export default function EditMCQs() {
             saving ? "bg-emerald-300 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"
           }`}
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? (t("set.save.ing")) : (t("set.save.change"))}
         </button>
       </div>
 
@@ -129,6 +132,7 @@ function QuestionsPreview({
   questions: Question[];
   onDelete?: (index: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 mt-5">
       {questions.map((q, idx) => (
@@ -159,7 +163,7 @@ function QuestionsPreview({
 
           {(q.explanation || q.options.some((o) => o.explanation)) && (
             <details className="mt-3">
-              <summary className="cursor-pointer text-sm text-gray-600">Explanations</summary>
+              <summary className="cursor-pointer text-sm text-gray-600">{(t("set.explanation"))}</summary>
               <div className="mt-2 space-y-2 text-sm">
                 {q.explanation && (
                   <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-emerald-800">

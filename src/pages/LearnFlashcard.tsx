@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation } from "react-i18next";
 
 type Flashcard = { id: string; front: string; back: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
 type ApiFlashcard = { id?: string | number; front?: string; back?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
@@ -92,6 +93,8 @@ export default function LearnFlashcard() {
   const [revealed, setRevealed] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  const { t } = useTranslation();
+
   // load from API if state missing
   useEffect(() => {
     if (cards || !setId) {
@@ -138,7 +141,7 @@ export default function LearnFlashcard() {
     if (!card || !revealed) return [];
   
     return [1, 2, 3, 4].map((grade) => {
-      const label = ["Again", "Hard", "Good", "Easy"][grade-1] ?? `Grade ${grade}`;
+      const label = [(t("study.label.again")),(t("study.label.hard")),(t("study.label.good")),(t("study.label.easy"))][grade-1] ?? `Grade ${grade}`;
       const intervalText = estimateNextInterval(grade, card.ef, card.repetitions, card.interval_hours);
       return { grade, label, intervalText };
     });
@@ -250,7 +253,7 @@ export default function LearnFlashcard() {
       />
 
       <div className="rounded-2xl border bg-gray-100 p-6 md:p-8">
-        <h2 className="mb-4 text-xl md:text-2xl font-semibold">Card {index + 1}</h2>
+        <h2 className="mb-4 text-xl md:text-2xl font-semibold">{(t("set.card"))} {index + 1}</h2>
 
         {/* card body */}
         <div className="rounded-2xl bg-white border p-6 md:p-10 min-h-[160px] space-y-4">
@@ -267,7 +270,7 @@ export default function LearnFlashcard() {
               onClick={handleFlip}
               className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-700"
             >
-              Show answer (Space)
+              {(t("study.answer"))}
             </button>
           ) : (
             <>
@@ -303,12 +306,13 @@ function Header({
   index: number;
   progressPct: number;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to={`/sets/${setId}`} className="text-sm text-emerald-700 hover:underline">
-            ← Back
+            {(t("set.backButton"))}
           </Link>
           <div>
             <h1 className="text-2xl font-semibold">{deckTitle}</h1>

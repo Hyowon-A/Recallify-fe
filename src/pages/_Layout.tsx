@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import { useState } from "react";
+import {useTranslation} from "react-i18next";
 
 type User = { name: string; email: string } | null;
 
@@ -19,6 +20,8 @@ export default function Layout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const { t } = useTranslation();
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -54,13 +57,13 @@ export default function Layout({
                 onClick={onOpenLogin}
                 className="rounded-lg px-3 py-1.5 text-emerald-700 hover:bg-emerald-50"
               >
-                Log in
+                {(t("landing.login"))}
               </button>
               <button
                 onClick={onOpenSignup}
                 className="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-700"
               >
-                Sign up
+                {(t("landing.signup"))}
               </button>
             </nav>
           )}

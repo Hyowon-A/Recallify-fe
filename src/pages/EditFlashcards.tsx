@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation } from "react-i18next";
 
 type Flashcard = {
   id: string;
@@ -24,6 +25,8 @@ export default function EditFlashcards() {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   const nav = useNavigate();
+
+  const { t } = useTranslation();
 
   async function handleSave() {
     setSaving(true);
@@ -61,9 +64,9 @@ export default function EditFlashcards() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-6">
       <Link to={`/sets/${state.meta.id}`} className="text-sm text-emerald-700 hover:underline">
-            ← Back
+            {(t("set.backButton"))}
       </Link>
-      <h1 className="text-2xl font-semibold mb-4">Edit {title}</h1>
+      <h1 className="text-2xl font-semibold mb-4">{(t("set.edit"))}: {title}</h1>
 
       <div className="mb-4 flex items-center justify-between gap-3">
         {/* Left side: title input + public/private toggle */}
@@ -73,24 +76,24 @@ export default function EditFlashcards() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <div className="inline-flex rounded-full bg-gray-100 p-1">
-            <button
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                isPublic ? "bg-white shadow" : "text-gray-600"
-              }`}
-              onClick={() => setIsPublic(true)}
-            >
-              Public
-            </button>
-            <button
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                !isPublic ? "bg-white shadow" : "text-gray-600"
-              }`}
-              onClick={() => setIsPublic(false)}
-            >
-              Private
-            </button>
-          </div>
+        </div>
+        <div className="inline-flex rounded-full bg-gray-100 p-1">
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              isPublic ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setIsPublic(true)}
+          >
+            {(t("set.visibility.public"))}
+          </button>
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              !isPublic ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setIsPublic(false)}
+          >
+            {(t("set.visibility.private"))}
+          </button>
         </div>
 
         {/* Right side: Save button */}
@@ -101,7 +104,7 @@ export default function EditFlashcards() {
             saving ? "bg-emerald-300 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"
           }`}
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? (t("set.save.ing")) : (t("set.save.change"))}
         </button>
       </div>
 
@@ -128,6 +131,7 @@ function FlashcardsPreview({
   cards: Flashcard[];
   onDelete?: (index: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 mt-5">
       {cards.map((c, idx) => (
@@ -140,14 +144,14 @@ function FlashcardsPreview({
               <Trash2 className="h-4 w-4" />
             </button>
           )}
-          <div className="mb-2 text-sm text-gray-500">Card {idx + 1}</div>
+          <div className="mb-2 text-sm text-gray-500">{(t("set.card"))} {idx + 1}</div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border bg-gray-50 p-3">
-              <div className="text-xs uppercase text-gray-500 mb-1">Front</div>
+              <div className="text-xs uppercase text-gray-500 mb-1">{(t("set.front"))}</div>
               <div className="text-sm whitespace-pre-wrap">{c.front}</div>
             </div>
             <div className="rounded-lg border bg-gray-50 p-3">
-              <div className="text-xs uppercase text-gray-500 mb-1">Back</div>
+              <div className="text-xs uppercase text-gray-500 mb-1">{(t("set.back"))}</div>
               <div className="text-sm whitespace-pre-wrap">{c.back}</div>
             </div>
           </div>

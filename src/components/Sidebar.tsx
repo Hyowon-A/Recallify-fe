@@ -1,8 +1,11 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next"
 
 export default function Sidebar() {
   const linkBase =
     "w-full text-center rounded-xl px-4 py-2 font-medium transition";
+
+  const { t } = useTranslation();
 
   return (
     <aside className="fixed top-[57px] left-0 h-[calc(100vh-57px)] w-60 flex flex-col border-r bg-gray-100">
@@ -17,7 +20,7 @@ export default function Sidebar() {
             }`
           }
         >
-          Dashboard
+          {(t("nav.dashboard"))}
         </NavLink>
       </nav>
 
@@ -32,7 +35,7 @@ export default function Sidebar() {
             }`
           }
         >
-          Public Library
+          {(t("nav.library"))}
         </NavLink>
       </nav>
 

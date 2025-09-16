@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation } from "react-i18next";
 
 export default function CreateMCQs() {
   const loc = useLocation() as { state?: { type?: "MCQ" | "FLASHCARD" } };
@@ -18,7 +19,11 @@ export default function CreateMCQs() {
   const [loading, setLoading] = useState(false);
   const [isPublic, setIsPublic] = useState(false)
 
+  const [level, setLevel] = useState<"easy" | "normal" | "hard">("normal");
+
   const navigate = useNavigate();
+
+  const { t } = useTranslation();
 
   const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -32,8 +37,8 @@ export default function CreateMCQs() {
   }
 
   async function handleGenerate() {
-    if (!deckTitle.trim()) { alert("Please enter a deck title."); return; }
-    if (activeTab === "upload" && !file) { alert("Please upload a file."); return; }
+    if (!deckTitle.trim()) { alert((t("create.titleMissing"))); return; }
+    if (activeTab === "upload" && !file) { alert((t("create.fileMissing"))); return; }
     if (activeTab === "paste" && paste.trim().length < 20) { alert("Paste a bit more text."); return; }
 
     setLoading(true);
@@ -59,6 +64,7 @@ export default function CreateMCQs() {
     const form = new FormData();
     form.append("setId", String(setId));
     form.append("count", String(count));
+    form.append("level", String(level));
     if (file) form.append("file", file);
     if (paste && paste.trim()) form.append("text", paste.trim());
 
@@ -88,13 +94,13 @@ export default function CreateMCQs() {
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            {deckType === "MCQ" ? "Create MCQs" : "Create Flashcards"}
+            {deckType === "MCQ" ? t("create.setType.mcq") : t("create.setType.flashcard")}
           </h1>
-          <p className="text-sm text-gray-500">Upload notes or paste text → AI generates questions.</p>
+          <p className="text-sm text-gray-500">{(t("create.uploadText"))}</p>
         </div>
         <div className="flex gap-3">
           <input
-            placeholder="Deck title"
+            placeholder= {(t("create.title"))}
             className="w-56 rounded-lg border border-gray-300 px-3 py-2"
             value={deckTitle}
             onChange={e => setDeckTitle(e.target.value)}
@@ -104,8 +110,8 @@ export default function CreateMCQs() {
             value={deckType}
             onChange={e => setDeckType(e.target.value as any)}
           >
-            <option value="MCQ">MCQ</option>
-            <option value="FLASHCARD">Flashcard</option>
+            <option value="MCQ">{(t("set.type.mcq"))}</option>
+            <option value="FLASHCARD">{(t("set.type.flashcard"))}</option>
           </select>
         </div>
       </div>
@@ -115,7 +121,7 @@ export default function CreateMCQs() {
         <button
           className={`px-4 py-1.5 rounded-full text-sm font-semibold ${activeTab==="upload"?"bg-white shadow":"text-gray-600"}`}
           onClick={()=>setActiveTab("upload")}
-        >Upload</button>
+        >{(t("create.upload"))}</button>
         {/* <button
           className={`px-4 py-1.5 rounded-full text-sm font-semibold ${activeTab==="paste"?"bg-white shadow":"text-gray-600"}`}
           onClick={()=>setActiveTab("paste")}
@@ -128,13 +134,13 @@ export default function CreateMCQs() {
           onDrop={onDrop}
           className="mb-6 rounded-2xl border-2 border-dashed border-gray-300 bg-white p-8 text-center"
         >
-          <p className="font-medium">Drag & drop a PDF</p>
-          <p className="text-sm text-gray-500">or</p>
+          <p className="font-medium">{(t("create.drop"))}</p>
+          <p className="text-sm text-gray-500">{(t("create.or"))}</p>
           <label className="mt-3 inline-block cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700">
-            Choose file
+          {(t("create.chooseFile"))}
             <input type="file" accept=".pdf,application/pdf" className="hidden" onChange={onSelectFile} />
           </label>
-          {file && <p className="mt-3 text-sm text-gray-600">Selected: {file.name}</p>}
+          {file && <p className="mt-3 text-sm text-gray-600">{(t("create.selected"))} {file.name}</p>}
         </div>
       ) : (
         <div className="mb-6">
@@ -151,7 +157,7 @@ export default function CreateMCQs() {
       {/* Config + Generate */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white px-4 py-3">
         <div className="flex items-center gap-4">
-            <label className="text-sm text-gray-600">Questions</label>
+            <label className="text-sm text-gray-600">{(t("create.questions"))}</label>
 
             {/* numeric input (kept in sync) */}
             <input
@@ -168,7 +174,8 @@ export default function CreateMCQs() {
 
             <span className="text-sm text-gray-500">/ 40</span>
         </div>
-
+        
+        {/* Set visibility */}
         <div className="inline-flex rounded-full bg-gray-100 p-1">
           <button
             className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
@@ -176,7 +183,7 @@ export default function CreateMCQs() {
             }`}
             onClick={() => setIsPublic(true)}
           >
-            Public
+            {(t("set.visibility.public"))}
           </button>
           <button
             className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
@@ -184,7 +191,35 @@ export default function CreateMCQs() {
             }`}
             onClick={() => setIsPublic(false)}
           >
-            Private
+            {(t("set.visibility.private"))}
+          </button>
+        </div>
+
+        {/* Set level of questions or cards */}
+        <div className="inline-flex rounded-full bg-gray-100 p-1">
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              level === "easy" ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setLevel("easy")}
+          >
+            {(t("create.level.easy"))}
+          </button>
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              level === "normal" ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setLevel("normal")}
+          >
+            {(t("create.level.normal"))}
+          </button>
+          <button
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+              level === "hard" ? "bg-white shadow" : "text-gray-600"
+            }`}
+            onClick={() => setLevel("hard")}
+          >
+            {(t("create.level.hard"))}
           </button>
         </div>
 
@@ -197,17 +232,17 @@ export default function CreateMCQs() {
             }`}
         >
             {loading
-              ? "Generating…"
-              : deckType === "MCQ" ? "Generate MCQs" : "Generate Flashcards"}
+              ? (t("create.generate.loading"))
+              : deckType === "MCQ" ? (t("create.generate.mcq")) : (t("create.generate.flashcard"))}
         </button>
         </div>
 
 
-      {/* Progress / Preview */}
+      {/* Progress */}
       {loading && (
         <div className="flex items-center gap-3 text-sm text-gray-600">
           <span className="animate-spin inline-block h-4 w-4 rounded-full border-2 border-emerald-600 border-t-transparent" />
-          Extracting, chunking and generating questions…
+            {(t("create.loadingMsg"))}
         </div>
       )}
     </div>

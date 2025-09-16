@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import FinalResultModal from "../components/FinalResultModal";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation } from "react-i18next";
 
 type Option = { id: string; option: string; correct?: boolean; explanation?: string,};
 type Question = { id: string; question: string; options: Option[]; explanation?: string; interval_hours: number; ef: number; repetitions: number; srsType: string};
@@ -111,6 +112,8 @@ export default function LearnMCQ() {
 
   const [showResults, setShowResults] = useState(false);
 
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (questions || !setId) {
       setLoading(false);
@@ -171,7 +174,7 @@ export default function LearnMCQ() {
     const isCorrect = selected === correctId;
   
     const allButtons = [1, 2, 3, 4].map((grade) => {
-      const label = ["Again", "Hard", "Good", "Easy"][grade - 1] ?? `Grade ${grade}`;
+      const label = [(t("study.label.again")),(t("study.label.hard")),(t("study.label.good")),(t("study.label.easy"))][grade-1] ?? `Grade ${grade}`;
       const intervalText = estimateNextInterval(grade, q.ef, q.repetitions, q.interval_hours);
       return { grade, label, intervalText };
     });
@@ -349,7 +352,7 @@ export default function LearnMCQ() {
                   : "bg-emerald-300 cursor-not-allowed"
               }`}
             >
-              Submit
+              {(t("study.submit"))}
             </button>
           )}
         </div>
@@ -415,12 +418,13 @@ function Header({
   index: number;
   progressPct: number;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to={`/sets/${setId}`} className="text-sm text-emerald-700 hover:underline">
-            ← Back
+            {(t("set.backButton"))}
           </Link>
           <div>
             <h1 className="text-2xl font-semibold">{deckTitle}</h1>

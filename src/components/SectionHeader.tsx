@@ -1,3 +1,5 @@
+import {useTranslation} from "react-i18next";
+
 export default function SectionHeader({
     title,
     onAdd,
@@ -7,6 +9,7 @@ export default function SectionHeader({
     onAdd?: () => void;
     disabled?: boolean;
   }) {
+    const {t} = useTranslation();
     return (
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-l font-semibold">{title}</h2>
@@ -19,7 +22,7 @@ export default function SectionHeader({
               ? "cursor-not-allowed bg-gray-300 text-gray-500" 
               : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
         >
-          + Add
+          {(t("sectionHeader.add"))}
         </button>
       )}
       </div>

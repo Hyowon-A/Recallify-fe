@@ -1,27 +1,46 @@
+import {useTranslation} from "react-i18next";
+
 type Props = { onGetStarted: () => void };
 
 export default function Landing({ onGetStarted }: Props) {
+  const { i18n, t } = useTranslation();
+  const isEnglish = i18n.language.startsWith("en");
+
   return (
     <>
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 py-20 md:grid-cols-2">
         <div className="text-center md:text-left">
           <h1 className="text-4xl font-extrabold md:text-5xl">
-            Master Your Memory with <span className="brand-font text-emerald-600">Recallify</span>
+            {isEnglish 
+              ? <>
+              {t("landing.heroTitle")}{" "}
+              <span className="brand-font text-emerald-600">Recallify</span>
+                </>
+              : <>
+              <span className="brand-font text-emerald-600">Recallify</span>
+              {t("landing.heroTitle.part1")} <br />
+              <div className="mt-2">{t("landing.heroTitle.part2")}</div>
+              </>
+            }
           </h1>
           <p className="mt-4 text-lg text-gray-700">
-            Turn your notes into study‑ready <span className="font-semibold text-emerald-700">MCQs and flashcards</span>, and
-            remember them with spaced repetition.
+            {t("landing.heroSub.part1")}{" "}
+            <span className="font-semibold text-emerald-700">{t("landing.heroSub.highlight")}</span>
+            {t("landing.heroSub.part2")}
           </p>
           <div className="mt-8 flex items-center justify-center gap-3 md:justify-start">
             <button
               onClick={onGetStarted}
               className="rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700"
             >
-              Get Started
+              {t("landing.getStarted")}
             </button>
-            <a href="#how" className="rounded-xl border border-gray-300 px-6 py-3 hover:bg-gray-50">
-              How it works
+            <a
+              href="#how"
+              className="rounded-xl border border-gray-300 px-6 py-3 hover:bg-gray-50"
+            >
+              {t("landing.how")}
             </a>
           </div>
         </div>
@@ -72,10 +91,10 @@ export default function Landing({ onGetStarted }: Props) {
       <section id="how" className="mx-auto max-w-6xl px-4 py-16">
         <ol className="grid grid-cols-1 gap-6 md:grid-cols-4">
           {[
-              ["Generate with AI", "Paste your notes and study material"],
-              ["Smart Question Creation", "AI generates MCQs and flashcards"],
-              ["Practice with Spaced Repetition", "Review smarter, not harder"],
-              ["Track Mastery", "Progress, scores, and review stats"]
+              [t("landing.howTitle1"), t("landing.howSub1")],
+              [t("landing.howTitle2"), t("landing.howSub2")],
+              [t("landing.howTitle3"), t("landing.howSub3")],
+              [t("landing.howTitle4"), t("landing.howSub4")]
           ].map(([t, b], i) => (
             <li key={i} className="rounded-2xl border bg-white p-6 shadow-sm">
               <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">

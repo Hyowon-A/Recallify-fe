@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import { useTranslation } from "react-i18next";
 
 export default function ProfileModal({
   open,
@@ -30,6 +31,8 @@ export default function ProfileModal({
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+  const { t } = useTranslation();
 
   // Clear field-specific errors as user types
   const onNameChange = (v: string) => {
@@ -164,7 +167,7 @@ export default function ProfileModal({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <h2 className="text-xl font-bold mb-4">Profile</h2>
+        <h2 className="text-xl font-bold mb-4">{(t("profile.profile"))}</h2>
 
         <div className="flex items-center justify-center mb-4">
           <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-600 text-white text-2xl font-bold">
@@ -174,7 +177,7 @@ export default function ProfileModal({
 
         {/* --- Name --- */}
         <div>
-          <label className="mb-1 block text-sm font-medium">Name</label>
+          <label className="mb-1 block text-sm font-medium">{(t("profile.name"))}</label>
           <input
             disabled={!editable}
             className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400"
@@ -186,7 +189,7 @@ export default function ProfileModal({
 
         {/* --- Email --- */}
         <div>
-          <label className="mb-1 mt-4 block text-sm font-medium">Email</label>
+          <label className="mb-1 mt-4 block text-sm font-medium">{(t("profile.email"))}</label>
           <input
             disabled={!editable}
             type="email"
@@ -201,7 +204,7 @@ export default function ProfileModal({
         {editable && (
           <div className="mt-4 space-y-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Current Password</label>
+              <label className="mb-1 block text-sm font-medium">{(t("profile.currentPw"))}</label>
               <input
                 type="password"
                 className="w-full rounded-lg border border-gray-200 px-3 py-2"
@@ -211,7 +214,7 @@ export default function ProfileModal({
               {currentPwError && <p className="text-sm text-red-500 mt-1">{currentPwError}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">New Password</label>
+              <label className="mb-1 block text-sm font-medium">{(t("profile.newPw"))}</label>
               <input
                 type="password"
                 className="w-full rounded-lg border border-gray-200 px-3 py-2"
@@ -221,7 +224,7 @@ export default function ProfileModal({
               {newPwError && <p className="text-sm text-red-500 mt-1">{newPwError}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Confirm New Password</label>
+              <label className="mb-1 block text-sm font-medium">{(t("profile.confirmNewPw"))}</label>
               <input
                 type="password"
                 className="w-full rounded-lg border border-gray-200 px-3 py-2"
@@ -240,7 +243,7 @@ export default function ProfileModal({
             onClick={onLogout}
             className="text-emerald-700 hover:underline"
           >
-            Log out
+            {(t("profile.logout"))}
           </button>
 
           <div className="space-x-2">
@@ -269,7 +272,7 @@ export default function ProfileModal({
               }}
               className="rounded-lg border px-4 py-2 hover:bg-gray-50"
             >
-              Cancel
+              {(t("profile.cancel"))}
             </button>
 
             {editable ? (
@@ -278,7 +281,7 @@ export default function ProfileModal({
                 onClick={handleSubmit}
                 className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
               >
-                Save
+                {(t("profile.save"))}
               </button>
             ) : (
               <button
@@ -286,7 +289,7 @@ export default function ProfileModal({
                 onClick={() => setEditable(true)}
                 className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
               >
-                Edit
+                {(t("profile.edit"))}
               </button>
             )}
           </div>

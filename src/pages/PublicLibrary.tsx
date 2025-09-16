@@ -3,6 +3,7 @@ import DeckCard from "../components/DeckCard";
 import SectionHeader from "../components/SectionHeader";
 import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
+import {useTranslation} from "react-i18next";
 
 type Deck = { id: string; title: string; count: number; isPublic: boolean, type: "MCQ" | "FLASHCARD", isOwner: boolean,
               newC: number, learn: number, due: number };
@@ -25,6 +26,8 @@ export default function PublicLibrary() {
   const [error, setError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
+
+  const { t } = useTranslation();
 
   const mapDeck = (d: ApiDeck): Deck => ({
     id: String(d.id),
@@ -87,7 +90,7 @@ export default function PublicLibrary() {
                 {error}
               </div>
             ) : mcq?.length === 0 ? (
-              <EmptyState message="No MCQ sets yet. Click Add to create one." />
+              <EmptyState message={(t("public.noMcq"))} />
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                 {mcq?.map((d) => (
@@ -104,7 +107,7 @@ export default function PublicLibrary() {
             {isLoading ? (
               <SkeletonGrid />
             ) : flash?.length === 0 ? (
-              <EmptyState message="No flashcard sets yet. Click Add to create one." />
+              <EmptyState message={(t("public.noFlash"))} />
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                 {flash?.map((d) => (

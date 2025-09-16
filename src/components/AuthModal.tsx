@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../config";
+import {useTranslation} from "react-i18next";
 
 type Mode = "login" | "signup";
 
@@ -37,6 +38,8 @@ export default function AuthModal({
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)\S{8,}$/;
+
+  const { t } = useTranslation();
 
   // Clear field-specific errors as user types
   const onEmailChange = (v: string) => {
@@ -289,7 +292,7 @@ export default function AuthModal({
                   mode === "login" ? "bg-white shadow text-emerald-700" : "text-gray-600"
                 }`}
               >
-                Log in
+                {(t("landing.login"))}
               </button>
               <button
                 onClick={() => onSwitch("signup")}
@@ -297,14 +300,14 @@ export default function AuthModal({
                   mode === "signup" ? "bg-white shadow text-emerald-700" : "text-gray-600"
                 }`}
               >
-                Sign up
+                {(t("landing.signup"))}
               </button>
             </div>
 
             <form className="space-y-3" onSubmit={handleSubmit} noValidate>
               {mode === "signup" && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Name</label>
+                  <label className="mb-1 block text-sm font-medium">{(t("auth.name"))}</label>
                   <input
                     value={name}
                     onChange={(e) => onNameChange(e.target.value)}
@@ -316,7 +319,7 @@ export default function AuthModal({
               )}
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Email</label>
+                <label className="mb-1 block text-sm font-medium">{(t("auth.email"))}</label>
                 <input
                   value={email}
                   onChange={(e) => onEmailChange(e.target.value)}
@@ -330,7 +333,7 @@ export default function AuthModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Password</label>
+                <label className="mb-1 block text-sm font-medium">{(t("auth.password"))}</label>
                 <input
                   value={pw}
                   onChange={(e) => onPwChange(e.target.value)}
@@ -349,7 +352,7 @@ export default function AuthModal({
                 className="mt-2 w-full rounded-lg bg-emerald-600 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
-                {loading ? (mode === "login" ? "Logging in..." : "Signing up...") : mode === "login" ? "Log in" : "Sign up"}
+                {loading ? (mode === "login" ? "Logging in..." : "Signing up...") : mode === "login" ? (t("landing.login")) : (t("landing.signup"))}
               </button>
             </form>
 
@@ -363,10 +366,10 @@ export default function AuthModal({
                   setForgotStatus(null);
                 }}
               >
-                Forgot password?
+                {(t("auth.forgotPw"))}
               </button>
               <button onClick={onClose} className="text-gray-500 hover:underline">
-                Close
+              {(t("auth.close"))}
               </button>
             </div>
           </>
