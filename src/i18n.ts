@@ -5,6 +5,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
   en: {
     common: {
+      feedback: "Feedback",
       landing: {
         login: "Log in",
         signup: "Sign up",
@@ -105,6 +106,7 @@ const resources = {
   },
   ko: {
     common: {
+      feedback: "피드백",
       landing: {
         login: "로그인",
         signup: "회원가입",

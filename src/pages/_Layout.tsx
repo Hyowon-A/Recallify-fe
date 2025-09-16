@@ -34,7 +34,14 @@ export default function Layout({
           >
             Recallify
           </Link>
-
+          <a
+            href="https://forms.gle/G5kPHfh9u8b6369P8"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xl font-medium text-blue-600 hover:underline"
+          >
+            {(t("feedback"))}
+          </a>
           {user ? (
             <div className="flex items-center gap-3">
               {/* Mobile toggle */}
