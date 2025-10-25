@@ -88,7 +88,9 @@ const handleAddFlash = () => nav("/create", { state: { type: "FLASHCARD" } });
     <>
       {/* MCQ sets */}
       <section className="mb-14">
-        <SectionHeader title={(t("sectionHeader.setType.mcq"))} onAdd={handleAddMCQ} disabled={(mcq?.length ?? 0) >= 3} />
+        <SectionHeader title={(t("sectionHeader.setType.mcq"))} onAdd={handleAddMCQ} 
+          //disabled={(mcq?.length ?? 0) >= 3} 
+        />
         {isLoading ? (
           <SkeletonGrid />
         ) : error ? (
@@ -109,7 +111,9 @@ const handleAddFlash = () => nav("/create", { state: { type: "FLASHCARD" } });
 
       {/* Flashcard sets */}
       <section>
-        <SectionHeader title={(t("sectionHeader.setType.flashcard"))} onAdd={handleAddFlash} disabled={(flash?.length ?? 0) >= 3} />
+        <SectionHeader title={(t("sectionHeader.setType.flashcard"))} onAdd={handleAddFlash} 
+        //disabled={(flash?.length ?? 0) >= 3} 
+        />
         {isLoading ? (
           <SkeletonGrid />
         ) : flash?.length === 0 ? (
