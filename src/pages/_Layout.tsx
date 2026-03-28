@@ -1,8 +1,6 @@
-import { Link } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
+import { Link, NavLink } from "react-router-dom";
 import Footer from "../components/Footer";
-import { useState } from "react";
-import {useTranslation} from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 type User = { name: string; email: string } | null;
 
@@ -19,89 +17,81 @@ export default function Layout({
   onOpenProfile: () => void;
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const { t } = useTranslation();
+  const authNavLinkBase =
+    "rounded-full px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition";
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur border-b">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 w-full">
-          <Link
-            to={user ? "/dashboard" : "/"}
-            className="brand-font text-2xl sm:text-3xl font-extrabold text-emerald-600"
-          >
-            Recallify
-          </Link>
-          {/* <a
-            href="https://forms.gle/G5kPHfh9u8b6369P8"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xl font-medium text-blue-600 hover:underline"
-          >
-            {(t("feedback"))}
-          </a> */}
-          {user ? (
-            <div className="flex items-center gap-3">
-              {/* Mobile toggle */}
-              <button
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                ☰
-              </button>
-              <button
-                onClick={onOpenProfile}
-                className="grid h-9 w-9 place-items-center rounded-full bg-white text-emerald-600 font-bold border shadow-sm"
-              >
-                {user.name?.[0]?.toUpperCase() ?? "U"}
-              </button>
-            </div>
-          ) : (
-            <nav className="flex items-center gap-2">
-              <button
-                onClick={onOpenLogin}
-                className="rounded-lg px-3 py-1.5 text-emerald-700 hover:bg-emerald-50"
-              >
-                {(t("landing.login"))}
-              </button>
-              <button
-                onClick={onOpenSignup}
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white hover:bg-emerald-700"
-              >
-                {(t("landing.signup"))}
-              </button>
-            </nav>
-          )}
+    <div className="relative flex min-h-screen flex-col overflow-hidden">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_top,_rgba(13,154,107,0.14),_transparent_58%)]" />
+      <header className="fixed left-0 right-0 top-0 z-30 px-3 pt-3 sm:px-5">
+        <div className="glass-panel mx-auto max-w-[1400px] rounded-[28px] px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to={user ? "/dashboard" : "/"}
+              className="brand-font text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+            >
+              <span className="text-slate-900">Recall</span>
+              <span className="text-emerald-600">ify</span>
+            </Link>
+            {user ? (
+              <>
+                <nav className="order-3 flex w-full items-center gap-2 overflow-x-auto pb-1 sm:order-2 sm:w-auto sm:flex-1 sm:justify-center sm:pb-0">
+                  <NavLink
+                    to="/dashboard"
+                    className={({ isActive }) =>
+                      `${authNavLinkBase} ${
+                        isActive
+                          ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10"
+                          : "bg-white/75 text-slate-700 hover:bg-white hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    {t("nav.dashboard")}
+                  </NavLink>
+                  <NavLink
+                    to="/library"
+                    className={({ isActive }) =>
+                      `${authNavLinkBase} ${
+                        isActive
+                          ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10"
+                          : "bg-white/75 text-slate-700 hover:bg-white hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    {t("nav.library")}
+                  </NavLink>
+                </nav>
+                <button
+                  onClick={onOpenProfile}
+                  aria-label={t("profile.profile")}
+                  className="order-2 ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-lime-400 text-sm font-bold text-white shadow-lg shadow-emerald-200/70 transition hover:scale-[1.03] sm:order-3"
+                >
+                  {user.name?.[0]?.toUpperCase() ?? "U"}
+                </button>
+              </>
+            ) : (
+              <nav className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={onOpenLogin}
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
+                >
+                  {t("landing.login")}
+                </button>
+                <button
+                  onClick={onOpenSignup}
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  {t("landing.signup")}
+                </button>
+              </nav>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-1 pt-[64px]">
-        {user && (
-          <>
-            {/* Sidebar (desktop) */}
-            <aside className="hidden md:block w-60 border-r bg-white">
-              <Sidebar />
-            </aside>
-
-            {/* Sidebar (mobile, slide-in) */}
-            {sidebarOpen && (
-              <div className="fixed inset-0 z-40 flex">
-                <div className="w-60 bg-white border-r p-4">
-                  <Sidebar />
-                </div>
-                <div
-                  className="flex-1 bg-black/50"
-                  onClick={() => setSidebarOpen(false)}
-                />
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-1 px-3 pb-8 pt-32 sm:px-5 sm:pt-28">
+        <main className="min-w-0 flex-1 overflow-y-auto rounded-[32px]">
           {children}
         </main>
       </div>

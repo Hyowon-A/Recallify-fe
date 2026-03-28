@@ -1,45 +1,60 @@
 import { NavLink } from "react-router-dom";
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next";
 
 export default function Sidebar() {
   const linkBase =
-    "w-full text-center rounded-xl px-4 py-2 font-medium transition";
+    "group flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left font-semibold transition";
 
   const { t } = useTranslation();
 
   return (
-    <aside className="fixed top-[57px] left-0 h-[calc(100vh-57px)] w-60 flex flex-col border-r bg-gray-100">
-      <div className="h-10" />
+    <aside className="glass-panel sticky top-24 flex h-[calc(100vh-7.5rem)] flex-col rounded-[32px] p-5">
+      <div className="mb-8 px-2">
+        <p className="text-xs font-bold uppercase tracking-[0.26em] text-emerald-700/80">
+          Recallify
+        </p>
+        <p className="mt-2 max-w-[18ch] text-sm leading-6 text-slate-600">
+          Study sets, review sessions, and your public library in one workspace.
+        </p>
+      </div>
 
-      <nav className="w-full px-4 space-y-2">
+      <nav className="space-y-2">
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
             `${linkBase} ${
-              isActive ? "bg-white text-emerald-600" : "hover:bg-white/60"
+              isActive
+                ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10"
+                : "text-slate-700 hover:bg-white hover:text-slate-900"
             }`
           }
         >
-          {(t("nav.dashboard"))}
+          <span>{t("nav.dashboard")}</span>
+          <span className="text-xs opacity-60">01</span>
         </NavLink>
-      </nav>
-
-      <div className="h-6" />
-
-      <nav className="w-full px-4 space-y-2">
         <NavLink
           to="/library"
           className={({ isActive }) =>
             `${linkBase} ${
-              isActive ? "bg-white text-emerald-600" : "hover:bg-white/60"
+              isActive
+                ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10"
+                : "text-slate-700 hover:bg-white hover:text-slate-900"
             }`
           }
         >
-          {(t("nav.library"))}
+          <span>{t("nav.library")}</span>
+          <span className="text-xs opacity-60">02</span>
         </NavLink>
       </nav>
 
       <div className="flex-1" />
+
+      <div className="surface-card rounded-[28px] p-4">
+        <p className="text-sm font-semibold text-slate-900">Build sharper decks</p>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          Upload notes, choose difficulty, and turn them into practice material fast.
+        </p>
+      </div>
     </aside>
   );
 }
