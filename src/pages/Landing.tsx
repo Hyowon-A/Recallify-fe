@@ -15,7 +15,7 @@ export default function Landing({ onGetStarted }: Props) {
   return (
     <div className="space-y-12 pb-8">
       <section className="hero-grid glass-panel mx-auto overflow-hidden rounded-[40px] px-6 py-10 sm:px-8 md:px-10 md:py-12">
-        <div className="grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-[1.1fr_0.9fr]">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-[1.1fr_0.9fr]">
           <div className="text-center md:text-left">
             <div className="inline-flex rounded-full border border-emerald-200 bg-white/70 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">
               AI study workflow

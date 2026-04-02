@@ -4,10 +4,12 @@ export default function SectionHeader({
   title,
   onAdd,
   disabled,
+  eyebrow = "Decks",
 }: {
   title: string;
   onAdd?: () => void;
   disabled?: boolean;
+  eyebrow?: string;
 }) {
   const { t } = useTranslation();
 
@@ -15,7 +17,7 @@ export default function SectionHeader({
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700/80">
-          Decks
+          {eyebrow}
         </p>
         <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{title}</h2>
       </div>

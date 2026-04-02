@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./pages/_Layout";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import Folder from "./pages/Folder";
 import PublicLibrary from "./pages/PublicLibrary";
 import LearnMCQ from "./pages/LearnMCQ";
 import LearnFlashcard from "./pages/LearnFlashcard";
@@ -55,17 +56,31 @@ export default function App() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Openers
-  const openLogin  = () => { setAuthMode("login");  setAuthOpen(true); };
-  const openSignup = () => { setAuthMode("signup"); setAuthOpen(true); };
+  const openLogin = () => {
+    setAuthMode("login");
+    setAuthOpen(true);
+  };
+  const openSignup = () => {
+    setAuthMode("signup");
+    setAuthOpen(true);
+  };
   const openProfile = () => setProfileOpen(true);
 
   // Auth success
-  const handleAuthSuccess = ({ name, email }: { name: string; email: string }) => {
-    const u  = { name: name, email: email };
+  const handleAuthSuccess = ({
+    name,
+    email,
+  }: {
+    name: string;
+    email: string;
+  }) => {
+    const u = { name: name, email: email };
     setUser(u);
     localStorage.setItem("email", u.email);
     localStorage.setItem("name", u.name);
@@ -76,7 +91,8 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await fetchWithAuth(`${API_BASE_URL}/user/logout`, { method: "POST" });
-    } catch {} finally {
+    } catch {
+    } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("email");
@@ -92,7 +108,12 @@ export default function App() {
 
   return (
     <>
-      <Layout user={user} onOpenLogin={openLogin} onOpenSignup={openSignup} onOpenProfile={openProfile}>
+      <Layout
+        user={user}
+        onOpenLogin={openLogin}
+        onOpenSignup={openSignup}
+        onOpenProfile={openProfile}
+      >
         <Routes>
           <Route
             path="/"
@@ -107,14 +128,78 @@ export default function App() {
             }
           />
 
-          <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-          <Route path="/library" element={<Protected><PublicLibrary /></Protected>} />
-          <Route path="/learn/MCQ/:setId" element={<Protected><LearnMCQ /></Protected>} />
-          <Route path="/learn/Flashcard/:setId" element={<Protected><LearnFlashcard /></Protected>} />
-          <Route path="/sets/:setId" element={<Protected><DeckDetails /></Protected>} />
-          <Route path="/sets/:setId/MCQ/edit" element={<Protected><EditMCQs /></Protected>} />
-          <Route path="/sets/:setId/Flashcard/edit" element={<Protected><EditFlashcards /></Protected>} />
-          <Route path="/create" element={<Protected><Create /></Protected>} />
+          <Route
+            path="/dashboard"
+            element={
+              <Protected>
+                <Dashboard />
+              </Protected>
+            }
+          />
+          <Route
+            path="/library"
+            element={
+              <Protected>
+                <PublicLibrary />
+              </Protected>
+            }
+          />
+          <Route
+            path="/folders/:folderPublicId"
+            element={
+              <Protected>
+                <Folder />
+              </Protected>
+            }
+          />
+          <Route
+            path="/learn/MCQ/:setId"
+            element={
+              <Protected>
+                <LearnMCQ />
+              </Protected>
+            }
+          />
+          <Route
+            path="/learn/Flashcard/:setId"
+            element={
+              <Protected>
+                <LearnFlashcard />
+              </Protected>
+            }
+          />
+          <Route
+            path="/sets/:setId"
+            element={
+              <Protected>
+                <DeckDetails />
+              </Protected>
+            }
+          />
+          <Route
+            path="/sets/:setId/MCQ/edit"
+            element={
+              <Protected>
+                <EditMCQs />
+              </Protected>
+            }
+          />
+          <Route
+            path="/sets/:setId/Flashcard/edit"
+            element={
+              <Protected>
+                <EditFlashcards />
+              </Protected>
+            }
+          />
+          <Route
+            path="/create"
+            element={
+              <Protected>
+                <Create />
+              </Protected>
+            }
+          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

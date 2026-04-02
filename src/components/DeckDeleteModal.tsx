@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 type Props = {
   open: boolean;
   itemName?: string;            // e.g. deck title
+  description?: string;
   loading?: boolean;            // disable buttons while deleting
   onDelete: () => void;
   onClose: () => void;
@@ -11,6 +12,7 @@ type Props = {
 export default function DeckDeleteModal({
   open,
   itemName = "this deck",
+  description,
   loading = false,
   onDelete,
   onClose,
@@ -55,8 +57,8 @@ export default function DeckDeleteModal({
           Delete {itemName}?
         </h2>
         <p className="mt-2 text-sm text-gray-600">
-          This action cannot be undone. All questions and progress in this deck
-          will be permanently removed.
+          {description ??
+            `This action cannot be undone. All questions and progress in ${itemName} will be permanently removed.`}
         </p>
 
         <div className="mt-6 flex items-center justify-end gap-2">

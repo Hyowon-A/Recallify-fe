@@ -4,13 +4,32 @@ import { fetchWithAuth } from "../auth";
 import { API_BASE_URL } from "../config";
 import { useTranslation } from "react-i18next";
 
+type FolderState = {
+  id: string;
+  publicId: string;
+  title: string;
+  isPublic: boolean;
+  mcqSetCount: number;
+  flashSetCount: number;
+};
+
 export default function CreateMCQs() {
-  const loc = useLocation() as { state?: { type?: "MCQ" | "FLASHCARD" } };
+  const loc = useLocation() as {
+    state?: {
+      type?: "MCQ" | "FLASHCARD";
+      folderId?: string | number;
+      folderPublicId?: string;
+      folder?: FolderState;
+    };
+  };
 
   const [deckTitle, setDeckTitle] = useState("");
   const [deckType, setDeckType] = useState<"MCQ" | "FLASHCARD">(
     loc.state?.type ?? "MCQ",
   );
+  const folderId = loc.state?.folderId;
+  const folderPublicId = loc.state?.folderPublicId;
+  const folder = loc.state?.folder;
   const [activeTab, setActiveTab] = useState<"upload" | "paste">("upload");
 
   const [file, setFile] = useState<File | null>(null);
@@ -28,7 +47,9 @@ export default function CreateMCQs() {
   const { i18n, t } = useTranslation();
   const isEnglish = i18n.language.startsWith("en");
   const pageTitle =
-    deckType === "MCQ" ? t("create.setType.mcq") : t("create.setType.flashcard");
+    deckType === "MCQ"
+      ? t("create.setType.mcq")
+      : t("create.setType.flashcard");
 
   const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -64,6 +85,7 @@ export default function CreateMCQs() {
         title: deckTitle,
         isPublic: isPublic,
         count: count,
+        ...(folderId ? { folderId: Number(folderId) } : {}),
       }),
     });
 
@@ -100,7 +122,15 @@ export default function CreateMCQs() {
     }
 
     const data = await genRes.json();
-    navigate("/dashboard");
+
+    if (folderPublicId) {
+      navigate(`/folders/${folderPublicId}`, {
+        state: folder,
+      });
+    } else {
+      navigate("/dashboard");
+    }
+
     return { setId, mcqs: data.mcqs ?? data };
   }
 
@@ -132,7 +162,9 @@ export default function CreateMCQs() {
               <select
                 className="w-full bg-transparent outline-none"
                 value={deckType}
-                onChange={(e) => setDeckType(e.target.value as "MCQ" | "FLASHCARD")}
+                onChange={(e) =>
+                  setDeckType(e.target.value as "MCQ" | "FLASHCARD")
+                }
               >
                 <option value="MCQ">{t("set.type.mcq")}</option>
                 <option value="FLASHCARD">{t("set.type.flashcard")}</option>
@@ -146,7 +178,9 @@ export default function CreateMCQs() {
         <div className="mb-5 inline-flex rounded-full bg-slate-100 p-1">
           <button
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              activeTab === "upload" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+              activeTab === "upload"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500"
             }`}
             onClick={() => setActiveTab("upload")}
           >
@@ -163,7 +197,9 @@ export default function CreateMCQs() {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[22px] bg-white text-2xl shadow-sm">
               PDF
             </div>
-            <p className="text-lg font-semibold text-slate-900">{t("create.drop")}</p>
+            <p className="text-lg font-semibold text-slate-900">
+              {t("create.drop")}
+            </p>
             <p className="mt-2 text-sm text-slate-500">{t("create.or")}</p>
             <label className="mt-5 inline-flex cursor-pointer rounded-full bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800">
               {t("create.chooseFile")}
@@ -207,7 +243,10 @@ export default function CreateMCQs() {
                   max={40}
                   value={count}
                   onChange={(e) => {
-                    const v = Math.max(1, Math.min(40, Number(e.target.value) || 0));
+                    const v = Math.max(
+                      1,
+                      Math.min(40, Number(e.target.value) || 0),
+                    );
                     setCount(v);
                   }}
                   className="w-full bg-transparent text-right text-2xl font-semibold outline-none"
@@ -223,7 +262,9 @@ export default function CreateMCQs() {
               <div className="inline-flex w-full rounded-2xl bg-slate-100 p-1">
                 <button
                   className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    isPublic ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                    isPublic
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500"
                   }`}
                   onClick={() => setIsPublic(true)}
                 >
@@ -231,7 +272,9 @@ export default function CreateMCQs() {
                 </button>
                 <button
                   className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    !isPublic ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                    !isPublic
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500"
                   }`}
                   onClick={() => setIsPublic(false)}
                 >
@@ -268,11 +311,17 @@ export default function CreateMCQs() {
                 Generation summary
               </p>
               <p className="mt-2 text-lg font-semibold text-slate-900">
-                {count} {deckType === "MCQ" ? t("set.unit.mcq") : t("set.unit.flashcard")}
+                {count}{" "}
+                {deckType === "MCQ"
+                  ? t("set.unit.mcq")
+                  : t("set.unit.flashcard")}
                 {count !== 1 && isEnglish ? "s" : ""} with {level} difficulty.
               </p>
               <p className="mt-1 text-sm text-slate-500">
-                {isPublic ? t("set.visibility.public") : t("set.visibility.private")} deck
+                {isPublic
+                  ? t("set.visibility.public")
+                  : t("set.visibility.private")}{" "}
+                deck
               </p>
             </div>
 
@@ -280,7 +329,9 @@ export default function CreateMCQs() {
               onClick={handleGenerate}
               disabled={loading}
               className={`min-w-[220px] rounded-full px-6 py-3.5 font-semibold text-white transition ${
-                loading ? "bg-emerald-300" : "bg-slate-900 hover:-translate-y-0.5 hover:bg-slate-800"
+                loading
+                  ? "bg-emerald-300"
+                  : "bg-slate-900 hover:-translate-y-0.5 hover:bg-slate-800"
               }`}
             >
               {loading
